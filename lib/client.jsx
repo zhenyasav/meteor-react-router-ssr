@@ -1,4 +1,3 @@
-ReactRouterSSR = {};
 ReactRouterSSR.Run = function(routes) {
   const {Router} = ReactRouter;
   const {history} = ReactRouter.lib.BrowserHistory;
