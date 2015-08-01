@@ -17,7 +17,7 @@ Package.onUse(function(api) {
     'meteorhacks:fast-render@2.7.1'
   ]);
 
-  api.use(['routepolicy'], ['server']);
+  api.use(['routepolicy@1.0.5'], ['server']);
 
   api.add_files(['lib/react-router-ssr.js']);
   api.add_files(['lib/client.jsx'], 'client');
