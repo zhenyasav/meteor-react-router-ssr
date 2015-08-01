@@ -1,8 +1,8 @@
 Package.describe({
   name: 'reactrouter:react-router-ssr',
-  version: '0.1.0',
+  version: '0.1.1',
   summary: 'server-side rendering for react-router',
-  git: 'https://github.com/octopusjs/meteor-react-router-ssr.git',
+  git: 'https://github.com/thereactivestack/meteor-react-router-ssr.git',
   documentation: 'README.md'
 });
 
