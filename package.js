@@ -1,6 +1,6 @@
 Package.describe({
   name: 'reactrouter:react-router-ssr',
-  version: '0.1.2',
+  version: '0.1.3',
   summary: 'server-side rendering for react-router',
   git: 'https://github.com/thereactivestack/meteor-react-router-ssr.git',
   documentation: 'README.md'
@@ -12,10 +12,12 @@ Npm.depends({
 
 Package.onUse(function(api) {
   api.use([
-    'react@0.1.4',
-    'reactrouter:react-router@0.1.1',
+    'react@0.1.7',
+    'reactrouter:react-router@0.1.3',
     'meteorhacks:fast-render@2.7.1'
   ]);
+  
+  api.imply(['reactrouter:react-router@0.1.3']);
 
   api.use(['routepolicy@1.0.5'], ['server']);
 
@@ -23,6 +25,5 @@ Package.onUse(function(api) {
   api.add_files(['lib/client.jsx'], 'client');
   api.add_files(['lib/server.jsx'], 'server');
 
-  api.export('ReactRouter');
   api.export('ReactRouterSSR');
 });
