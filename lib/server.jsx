@@ -25,7 +25,7 @@ function IsAppUrl(req) {
   return /html/.test(req.headers['accept']);
 }
 
-ReactRouterSSR.Run = function(routes) {
+ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
   Meteor.publish('TestItems', function () {
     return TestItems.find();
   });
@@ -65,6 +65,8 @@ ReactRouterSSR.Run = function(routes) {
           Meteor.subscribe = function() {
             context.subscribe.apply(context, arguments);
           };
+
+          let props = _.extend(initialState, serverOptions);
 
           try {
             FastRender.frContext.withValue(context, function() {
