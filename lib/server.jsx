@@ -26,10 +26,6 @@ function IsAppUrl(req) {
 }
 
 ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
-  Meteor.publish('TestItems', function () {
-    return TestItems.find();
-  });
-
   const {Router} = ReactRouter;
   const Location = ReactRouter.lib.Location;
   const url = Npm.require('url');

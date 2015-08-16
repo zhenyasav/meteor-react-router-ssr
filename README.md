@@ -22,8 +22,5 @@ AppRoutes = (
 ReactRouterSSR.Run(AppRoutes);
 ```
 
-# Fix for ReactMeteorData
-You can fix ReactMeteorData for server-rendering by including [react-meteor-data.jsx](https://github.com/thereactivestack/meteor-react-router-ssr/blob/master/react-meteor-data.jsx) in a server folder of your project ([until this PR is published](https://github.com/meteor/react-packages/pull/77)).
-
 # Warning
 This is using react-router 1.0 even though it is still in beta. The API is stable and working very well in production.
