@@ -66,6 +66,9 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
           try {
             FastRender.frContext.withValue(context, function() {
+              // Isomorphic cookies!
+              ReactCookie.plugToRequest(req, res);
+
               html = React.renderToString(
                 <Router {...initialState} children={routes} />
               );

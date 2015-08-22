@@ -15,6 +15,10 @@ The additional arguments you would like to give to the `<Router />` component on
 #### serverOptions (optional)
 The additional arguments you would like to give to the `<Router />` component on the server.
 
+## Server-side cookies
+Also brings `ReactCookie` to work with cookie both server-side and client-side. Cookies modified on the server are sent to the client. You can use `ReactCookie.save` and `ReactCookie.load`.<br />
+See the [react-cookie readme](https://github.com/eXon/react-cookie) for more informations.
+
 ## Example
 ```javascript
 const {Route} = ReactRouter;
