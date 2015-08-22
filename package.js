@@ -8,7 +8,7 @@ Package.describe({
 
 Npm.depends({
   'cookie-parser': '1.3.5',
-  'react-cookie': '0.3.3'
+  'react-cookie': '0.3.4'
 });
 
 Package.onUse(function(api) {
