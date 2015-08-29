@@ -1,6 +1,6 @@
 Package.describe({
   name: 'reactrouter:react-router-ssr',
-  version: '0.1.6',
+  version: '0.1.7',
   summary: 'server-side rendering for react-router',
   git: 'https://github.com/thereactivestack/meteor-react-router-ssr.git',
   documentation: 'README.md'
@@ -13,9 +13,9 @@ Npm.depends({
 
 Package.onUse(function(api) {
   api.use([
-    'react@0.1.7',
+    'react@0.1.9',
     'reactrouter:react-router@0.1.4',
-    'meteorhacks:fast-render@2.7.1',
+    'meteorhacks:fast-render@2.9.0',
     'cosmos:browserify@0.5.0'
   ]);
 
