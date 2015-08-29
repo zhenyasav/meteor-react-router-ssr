@@ -13,7 +13,7 @@ Npm.depends({
 
 Package.onUse(function(api) {
   api.use([
-    'react@0.1.9',
+    'react@0.1.5',
     'reactrouter:react-router@0.1.4',
     'meteorhacks:fast-render@2.9.0',
     'cosmos:browserify@0.5.0'
