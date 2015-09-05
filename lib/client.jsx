@@ -1,15 +1,18 @@
+const {Router} = ReactRouter;
+
 ReactRouterSSR.Run = function(routes, clientOptions) {
-  const {Router} = ReactRouter;
-  const {history} = ReactRouter.lib.BrowserHistory;
+  if (!clientOptions) {
+    clientOptions = {};
+  }
+
+  const history = clientOptions.history || ReactRouter.history.useQueries(ReactRouter.history.createHistory)();
 
   Meteor.startup(function() {
-    let props = _.extend({
-      history,
-      children: routes
-    }, clientOptions);
-
     React.render((
-      <Router {...props} />
+      <Router
+        history={history}
+        children={routes}
+        {...clientOptions.props} />
     ), document.getElementById('react-app'));
   });
 }

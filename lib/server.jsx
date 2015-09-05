@@ -25,12 +25,15 @@ function IsAppUrl(req) {
   return /html/.test(req.headers['accept']);
 }
 
+const {Router} = ReactRouter;
+const url = Npm.require('url');
+const Fiber = Npm.require('fibers');
+const cookieParser = Npm.require('cookie-parser');
+
 ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
-  const {Router} = ReactRouter;
-  const Location = ReactRouter.lib.Location;
-  const url = Npm.require('url');
-  const Fiber = Npm.require('fibers');
-  const cookieParser = Npm.require('cookie-parser');
+  if (!serverOptions) {
+    serverOptions = {};
+  }
 
   Meteor.bindEnvironment(function() {
     // Parse cookies for the login token
@@ -42,57 +45,56 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
         return;
       }
 
-      var parsedUrl = url.parse(req.url, true);
-      var location = new Location(parsedUrl.pathname, parsedUrl.query);
+      const history = ReactRouter.history.createMemoryHistory(req.url);
 
-      Router.run(routes, location, function(error, initialState, transition) {
-        var html = '';
+      var originalSubscribe = Meteor.subscribe;
+      var subscriptions = [];
 
-        if (initialState) {
-          var originalSubscribe = Meteor.subscribe;
-          var subscriptions = [];
+      var path = req.url;
+      var loginToken = req.cookies['meteor_login_token'];
+      var headers = req.headers;
 
-          var path = req.url;
-          var loginToken = req.cookies['meteor_login_token'];
-          var headers = req.headers;
+      var context = new FastRender._Context(loginToken, { headers: headers });
 
-          var context = new FastRender._Context(loginToken, { headers: headers });
+      Meteor.subscribe = function() {
+        context.subscribe.apply(context, arguments);
+      };
 
-          Meteor.subscribe = function() {
-            context.subscribe.apply(context, arguments);
-          };
-
-          let props = _.extend(initialState, serverOptions);
-
-          try {
-            FastRender.frContext.withValue(context, function() {
-              // Isomorphic cookies!
-              ReactCookie.plugToRequest(req, res);
-
-              html = React.renderToString(
-                <Router {...initialState} children={routes} />
-              );
-            });
-
-            res.pushData('fast-render-data', context.getData());
-          } catch(err) {
-            console.error('error while server-rendering', err.stack);
+      try {
+        FastRender.frContext.withValue(context, function() {
+          if (serverOptions.preRender) {
+            serverOptions.preRender(req, res);
           }
 
-          Meteor.subscribe = originalSubscribe;
+          html = React.renderToString(
+            <Router
+              history={history}
+              children={routes}
+              {...serverOptions.props} />
+          );
+
+          if (serverOptions.postRender) {
+            serverOptions.postRender(req, res);
+          }
+        });
+
+        res.pushData('fast-render-data', context.getData());
+      } catch(err) {
+        console.error('error while server-rendering', err.stack);
+      }
+
+      Meteor.subscribe = originalSubscribe;
+
+      var originalWrite = res.write;
+      res.write = function(data) {
+        if(typeof data === 'string') {
+          data = data.replace('<body>', '<body><div id="react-app">' + html + '</div>');
         }
 
-        var originalWrite = res.write;
-        res.write = function(data) {
-          if(typeof data === 'string') {
-            data = data.replace('<body>', '<body><div id="react-app">' + html + '</div>');
-          }
+        originalWrite.call(this, data);
+      };
 
-          originalWrite.call(this, data);
-        };
-
-        next();
-      });
+      next();
     }));
   })();
 };

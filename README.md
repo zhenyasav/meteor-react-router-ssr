@@ -10,14 +10,13 @@ Read the [react-router documentation](http://rackt.github.io/react-router/tags/v
 Your main `<Route />` node of your application.
 
 #### clientOptions (optional)
-The additional arguments you would like to give to the `<Router />` component on the client.
+`props` [object]: The additional arguments you would like to give to the `<Router />` component on the client.<br />
+`history`: History object to use. You can use `new ReactRouter.history.createHistory()`, `new ReactRouter.history.createHashHistory()` or `new ReactRouter.history.createMemoryHistory()`
 
 #### serverOptions (optional)
-The additional arguments you would like to give to the `<Router />` component on the server.
-
-## Server-side cookies
-Also brings `ReactCookie` to work with cookie both server-side and client-side. Cookies modified on the server are sent to the client. You can use `ReactCookie.save` and `ReactCookie.load`.<br />
-See the [react-cookie readme](https://github.com/eXon/react-cookie) for more informations.
+`props` [object]: The additional arguments you would like to give to the `<Router />` component on the server.
+`preRender` [function(req, res)]: Executed just before the renderToString
+`postRender` [function(req, res)]: Executed just after the renderToString
 
 ## Example
 ```javascript
@@ -33,9 +32,15 @@ AppRoutes = (
 );
 
 ReactRouterSSR.Run(AppRoutes, {
-  onUpdate() {
-    // Notify the page has been changed to Google Analytics
-    ga('send', 'pageview');
+  props: {
+    onUpdate() {
+      // Notify the page has been changed to Google Analytics
+      ga('send', 'pageview');
+    }
+  }
+}, {
+  preRender: function(req, res) {
+    ReactCookie.plugToRequest(req, res);
   }
 });
 

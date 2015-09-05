@@ -10,14 +10,6 @@
           "version": "1.0.6"
         }
       }
-    },
-    "react-cookie": {
-      "version": "0.3.4",
-      "dependencies": {
-        "cookie": {
-          "version": "0.1.3"
-        }
-      }
     }
   }
 }
