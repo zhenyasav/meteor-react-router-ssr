@@ -1,4 +1,4 @@
-Server-side rendering for `react-router` and `react-meteor-data` rehydratation using Meteor subscriptions.
+Server-side rendering for react-router and react-meteor-data rehydratating Meteor subscriptions
 
 ## Install
 `meteor add reactrouter:react-router-ssr`
