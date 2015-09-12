@@ -13,6 +13,6 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
         history={history}
         children={routes}
         {...clientOptions.props} />
-    ), document.getElementById('react-app'));
+    ), document.getElementById(clientOptions.rootElement || 'react-app'));
   });
 }
