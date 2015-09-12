@@ -19,10 +19,7 @@ function IsAppUrl(req) {
   if(RoutePolicy.classify(url)) {
     return false;
   }
-
-  // we only need to support HTML pages only
-  // this is a check to do it
-  return /html/.test(req.headers['accept']);
+  return true;
 }
 
 const {Router} = ReactRouter;
@@ -43,7 +40,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
     // Parse cookies for the login token
     WebApp.rawConnectHandlers.use(cookieParser());
 
-    WebApp.rawConnectHandlers.use(Meteor.bindEnvironment(function(req, res, next) {
+    WebApp.connectHandlers.use(Meteor.bindEnvironment(function(req, res, next) {
       if (!IsAppUrl(req)) {
         next();
         return;
@@ -91,7 +88,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
       var originalWrite = res.write;
       res.write = function(data) {
-        if(typeof data === 'string') {
+        if(typeof data === 'string' && data.indexOf('<!DOCTYPE html>') === 0) {
           data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
         }
 
