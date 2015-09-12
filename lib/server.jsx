@@ -31,6 +31,10 @@ const Fiber = Npm.require('fibers');
 const cookieParser = Npm.require('cookie-parser');
 
 ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
+  if (!clientOptions) {
+    clientOptions = {};
+  }
+
   if (!serverOptions) {
     serverOptions = {};
   }
@@ -88,7 +92,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
       var originalWrite = res.write;
       res.write = function(data) {
         if(typeof data === 'string') {
-          data = data.replace('<body>', '<body><div id="react-app">' + html + '</div>');
+          data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
         }
 
         originalWrite.call(this, data);
