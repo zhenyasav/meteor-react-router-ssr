@@ -4,10 +4,11 @@
 ## Usage
 ### `ReactRouterSSR.Run(routes, [clientOptions], [serverOptions])`
 The `routes` argument takes the routes you want react-router to use (you don't have to call `React.render()` yourself)<br />
-Read the [react-router documentation](http://rackt.github.io/react-router/tags/v1.0.0-beta3.html) for more informations.
+Read the [react-router documentation](https://github.com/rackt/react-router/tree/master/docs) for more informations.
 
 #### routes
-Your main `<Route />` node of your application.
+Your main `<Route />` node of your application.<br />
+**Notice that their is no `<Router />` element, ReactRouterSSR takes care of creating it on the client and server with the correct parameters**
 
 #### clientOptions (optional)
 `props` [object]: The additional arguments you would like to give to the `<Router />` component on the client.<br />
