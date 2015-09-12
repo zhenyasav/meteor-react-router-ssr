@@ -1,3 +1,5 @@
+Server-side rendering for `react-router` and `react-meteor-data` rehydratation using Meteor subscriptions.
+
 ## Install
 `meteor add reactrouter:react-router-ssr`
 
@@ -11,21 +13,54 @@ Your main `<Route />` node of your application.<br />
 **Notice that their is no `<Router />` element, ReactRouterSSR takes care of creating it on the client and server with the correct parameters**
 
 #### clientOptions (optional)
-`props` [object]: The additional arguments you would like to give to the `<Router />` component on the client.<br />
-`history`: History object to use. You can use `new ReactRouter.history.createHistory()`, `new ReactRouter.history.createHashHistory()` or `new ReactRouter.history.createMemoryHistory()`
+- `rootElement` [string]: The root element ID your React application is mounted (default to `react-app`)
+- `props` [object]: The additional arguments you would like to give to the `<Router />` component on the client.
+- `history`: History object to use. You can use `new ReactRouter.history.createHistory()`, `new ReactRouter.history.createHashHistory()` or `new ReactRouter.history.createMemoryHistory()`
 
 #### serverOptions (optional)
-`props` [object]: The additional arguments you would like to give to the `<Router />` component on the server.
-`preRender` [function(req, res)]: Executed just before the renderToString
-`postRender` [function(req, res)]: Executed just after the renderToString
+- `props` [object]: The additional arguments you would like to give to the `<Router />` component on the server.
+- `preRender` [function(req, res)]: Executed just before the renderToString
+- `postRender` [function(req, res)]: Executed just after the renderToString
 
-## Example
+## Simple Example
 ```javascript
-const {Route} = ReactRouter;
+const {IndexRoute, Route} = ReactRouter;
 
 AppRoutes = (
   <Route path="/" component={App}>
-    <Route path="/" component={HomePage} />
+    <IndexRoute component={HomePage} />
+    <Route path="login" component={LoginPage} />
+    <Route path="*" component={NotFoundPage} />
+    {/* ... */}
+  </Route>
+);
+
+HomePage = React.createClass({
+  mixins: [ReactMeteorData],
+  
+  getMeteorData() {
+    Meteor.subscribe('profile');
+  
+    return {
+      profile: Profile.findOne({ user: Meteor.userId() })
+    };
+  },
+
+  render() {
+    return <div>Hi {profile.name}</div>;
+  }
+});
+
+ReactRouterSSR.Run(AppRoutes);
+```
+
+## Complex Example
+```javascript
+const {IndexRoute, Route} = ReactRouter;
+
+AppRoutes = (
+  <Route path="/" component={App}>
+    <IndexRoute component={HomePage} />
     <Route path="login" component={LoginPage} />
     <Route path="*" component={NotFoundPage} />
     {/* ... */}
@@ -57,5 +92,3 @@ if (Meteor.isClient) {
 }
 ```
 
-## Warning
-This is using react-router 1.0 even though it is still in beta. The API is stable and working very well in production.
