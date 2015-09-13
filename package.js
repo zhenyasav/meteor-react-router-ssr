@@ -1,13 +1,14 @@
 Package.describe({
   name: 'reactrouter:react-router-ssr',
-  version: '0.1.10',
+  version: '0.1.11',
   summary: 'Server-side rendering for react-router and react-meteor-data rehydratating Meteor subscriptions',
   git: 'https://github.com/thereactivestack/meteor-react-router-ssr.git',
   documentation: 'README.md'
 });
 
 Npm.depends({
-  'cookie-parser': '1.3.5'
+  'cookie-parser': '1.3.5',
+  'cheerio': '0.19.0'
 });
 
 Package.onUse(function(api) {

@@ -41,11 +41,12 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
     WebApp.rawConnectHandlers.use(cookieParser());
 
     WebApp.connectHandlers.use(Meteor.bindEnvironment(function(req, res, next) {
+      console.log('S1');
       if (!IsAppUrl(req)) {
         next();
         return;
       }
-
+console.log('S2');
       const history = ReactRouter.history.createMemoryHistory(req.url);
 
       var originalSubscribe = Meteor.subscribe;
@@ -60,7 +61,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
       Meteor.subscribe = function() {
         context.subscribe.apply(context, arguments);
       };
-
+console.log('S3');
       try {
         FastRender.frContext.withValue(context, function() {
           if (serverOptions.preRender) {
@@ -85,10 +86,16 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
       }
 
       Meteor.subscribe = originalSubscribe;
-
+console.log('S4');
       var originalWrite = res.write;
       res.write = function(data) {
+        console.log('S5');
         if(typeof data === 'string' && data.indexOf('<!DOCTYPE html>') === 0) {
+          console.log('S6');
+          if (!serverOptions.dontMoveScripts) {
+            data = moveScripts(data);
+          }
+
           data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
         }
 
@@ -99,3 +106,20 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
     }));
   })();
 };
+
+// Thank you FlowRouter for this wonderful idea :)
+// https://github.com/kadirahq/flow-router/blob/ssr/server/route.js
+const Cheerio = Npm.require('cheerio');
+
+function moveScripts(data) {
+  const $ = Cheerio.load(data, {
+    decodeEntities: false
+  });
+  const heads = $('head script');
+  $('body').append(heads);
+
+  // Remove empty lines caused by removing scripts
+  $('head').html($('head').html().replace(/(^[ \t]*\n)/gm, ''));
+
+  return $.html();
+}

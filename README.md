@@ -21,6 +21,7 @@ Your main `<Route />` node of your application.<br />
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the server.
 - `preRender` [function(req, res)]: Executed just before the renderToString
 - `postRender` [function(req, res)]: Executed just after the renderToString
+- `dontMoveScripts` [bool]: Keep the script inside the head tag instead of moving it at the end of the body
 
 ## Simple Example
 ```javascript
@@ -37,10 +38,10 @@ AppRoutes = (
 
 HomePage = React.createClass({
   mixins: [ReactMeteorData],
-  
+
   getMeteorData() {
     Meteor.subscribe('profile');
-  
+
     return {
       profile: Profile.findOne({ user: Meteor.userId() })
     };
@@ -91,4 +92,3 @@ if (Meteor.isClient) {
   ga('send', 'pageview');
 }
 ```
-
