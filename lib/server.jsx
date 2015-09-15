@@ -41,12 +41,11 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
     WebApp.rawConnectHandlers.use(cookieParser());
 
     WebApp.connectHandlers.use(Meteor.bindEnvironment(function(req, res, next) {
-      console.log('S1');
       if (!IsAppUrl(req)) {
         next();
         return;
       }
-console.log('S2');
+
       const history = ReactRouter.history.createMemoryHistory(req.url);
 
       var originalSubscribe = Meteor.subscribe;
@@ -61,7 +60,7 @@ console.log('S2');
       Meteor.subscribe = function() {
         context.subscribe.apply(context, arguments);
       };
-console.log('S3');
+
       try {
         FastRender.frContext.withValue(context, function() {
           if (serverOptions.preRender) {
@@ -86,12 +85,10 @@ console.log('S3');
       }
 
       Meteor.subscribe = originalSubscribe;
-console.log('S4');
+
       var originalWrite = res.write;
       res.write = function(data) {
-        console.log('S5');
         if(typeof data === 'string' && data.indexOf('<!DOCTYPE html>') === 0) {
-          console.log('S6');
           if (!serverOptions.dontMoveScripts) {
             data = moveScripts(data);
           }
