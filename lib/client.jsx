@@ -26,8 +26,8 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
       , rootElement
     );
 
-    let collectorEl = document.getElementById('css-style-collector-data')
-    
+    let collectorEl = document.getElementById(clientOptions.styleCollectorId || 'css-style-collector-data')
+
     if (collectorEl) {
       collectorEl.remove();
     }

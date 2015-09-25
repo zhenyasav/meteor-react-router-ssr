@@ -101,7 +101,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           }
 
           if (css) {
-            data = data.replace('</head>', '<style id="css-style-collector-data">' + css + '</style></head>');
+            data = data.replace('</head>', '<style id="' + (clientOptions.styleCollectorId || 'css-style-collector-data') + '">' + css + '</style></head>');
           }
 
           data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
