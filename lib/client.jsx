@@ -25,5 +25,11 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
         {...clientOptions.props} />
       , rootElement
     );
+
+    let collectorEl = document.getElementById('css-style-collector-data')
+    
+    if (collectorEl) {
+      collectorEl.remove();
+    }
   });
 }

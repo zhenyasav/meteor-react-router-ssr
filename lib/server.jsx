@@ -55,6 +55,8 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
       var loginToken = req.cookies['meteor_login_token'];
       var headers = req.headers;
 
+      var css = null;
+
       var context = new FastRender._Context(loginToken, { headers: headers });
 
       Meteor.subscribe = function() {
@@ -67,12 +69,17 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
             serverOptions.preRender(req, res);
           }
 
+          global.__STYLE_COLLECTOR_MODULES__ = [];
+          global.__STYLE_COLLECTOR__ = '';
+
           html = React.renderToString(
             <Router
               history={history}
               children={routes}
               {...serverOptions.props} />
           );
+
+          css = global.__STYLE_COLLECTOR__;
 
           if (serverOptions.postRender) {
             serverOptions.postRender(req, res);
@@ -91,6 +98,10 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
         if(typeof data === 'string' && data.indexOf('<!DOCTYPE html>') === 0) {
           if (!serverOptions.dontMoveScripts) {
             data = moveScripts(data);
+          }
+
+          if (css) {
+            data = data.replace('</head>', '<style id="css-style-collector-data">' + css + '</style></head>');
           }
 
           data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
