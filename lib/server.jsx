@@ -76,6 +76,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
           if (Package.mongo) {
             _MongoCollectionProxy.isSSR = true;
+            _MongoCollectionProxy._selectors = {};
           }
 
           if (serverOptions.preRender) {
@@ -203,8 +204,6 @@ if (Package.mongo && !Package.autopublish) {
       return super.findOne.apply(this, args);
     }
   }
-
-  MongoCollectionProxy._selectors = {};
 
   MongoCollectionProxy._fakePublish = function(result) {
     if (Array.isArray(result)) {
