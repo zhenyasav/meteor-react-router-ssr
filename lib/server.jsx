@@ -1,3 +1,5 @@
+var _MongoCollectionProxy;
+
 // meteor algorithm to check if this is a meteor serving http request or not
 function IsAppUrl(req) {
   var url = req.url
@@ -48,9 +50,6 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
       const history = ReactRouter.history.createMemoryHistory(req.url);
 
-      var originalSubscribe = Meteor.subscribe;
-      var subscriptions = [];
-
       var path = req.url;
       var loginToken = req.cookies['meteor_login_token'];
       var headers = req.headers;
@@ -59,12 +58,26 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
       var context = new FastRender._Context(loginToken, { headers: headers });
 
-      Meteor.subscribe = function() {
-        context.subscribe.apply(context, arguments);
-      };
-
       try {
         FastRender.frContext.withValue(context, function() {
+          const originalSubscribe = Meteor.subscribe;
+
+          Meteor.subscribe = function(name) {
+            if (Package.mongo && !Package.autopublish) {
+              _MongoCollectionProxy.isSSR = true;
+              const publishResult = Meteor.server.publish_handlers[name].call(context);
+              _MongoCollectionProxy.isSSR = false;
+
+              _MongoCollectionProxy._fakePublish(publishResult);
+            }
+
+            context.subscribe.apply(context, arguments);
+          };
+
+          if (Package.mongo) {
+            _MongoCollectionProxy.isSSR = true;
+          }
+
           if (serverOptions.preRender) {
             serverOptions.preRender(req, res);
           }
@@ -84,14 +97,18 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           if (serverOptions.postRender) {
             serverOptions.postRender(req, res);
           }
+
+          Meteor.subscribe = originalSubscribe;
+
+          if (Package.mongo) {
+            _MongoCollectionProxy.isSSR = false;
+          }
         });
 
         res.pushData('fast-render-data', context.getData());
       } catch(err) {
         console.error('error while server-rendering', err.stack);
       }
-
-      Meteor.subscribe = originalSubscribe;
 
       var originalWrite = res.write;
       res.write = function(data) {
@@ -130,4 +147,77 @@ function moveScripts(data) {
   $('head').html($('head').html().replace(/(^[ \t]*\n)/gm, ''));
 
   return $.html();
+}
+
+if (Package.mongo && !Package.autopublish) {
+  // Protect against returning data that has not been published
+  class MongoCollectionProxy extends Mongo.Collection {
+    constructor(name, options) {
+      super(name, options);
+      this._name = name;
+    }
+
+    find() {
+      if (!MongoCollectionProxy.isSSR) {
+        return super.find.apply(this, arguments);
+      }
+
+      // Make sure to return nothing if no publish has been called
+      if (!MongoCollectionProxy._selectors[this._name] || !MongoCollectionProxy._selectors[this._name].length) {
+        return super.find({ _id: -1 });
+      }
+
+      if (arguments.length) {
+        arguments[0] = { $and: [arguments[0], { $or: MongoCollectionProxy._selectors[this._name] }] };
+      } else {
+        arguments.push({ $or: MongoCollectionProxy._selectors[this._name] });
+      }
+
+      return super.find.apply(this, arguments);
+    }
+
+    findOne() {
+      if (!MongoCollectionProxy.isSSR) {
+        return super.findOne.apply(this, arguments);
+      }
+
+      // Make sure to return nothing if no publish has been called
+      if (!MongoCollectionProxy._selectors[_name] || !MongoCollectionProxy._selectors[this._name].length) {
+        return super.findOne({ _id: -1 });
+      }
+
+      if (arguments.length) {
+        if (typeof arguments[0] === 'string') {
+          arguments[0] = { _id: arguments[0] };
+        }
+
+        arguments[0] = { $and: [arguments[0], { $or: MongoCollectionProxy._selectors[this._name] }] };
+      } else {
+        arguments.push({ $or: MongoCollectionProxy._selectors[this._name] });
+      }
+
+      return super.findOne.apply(this, arguments);
+    }
+  }
+
+  MongoCollectionProxy._selectors = {};
+
+  MongoCollectionProxy._fakePublish = function(result) {
+    if (Array.isArray(result)) {
+      result.forEach(subResult => MongoCollectionProxy._fakePublish(subResult));
+      return;
+    }
+
+    const name = result._cursorDescription.collectionName;
+    const selector = result._cursorDescription.selector;
+
+    if (!MongoCollectionProxy._selectors[name]) {
+      MongoCollectionProxy._selectors[name] = [];
+    }
+
+    MongoCollectionProxy._selectors[name].push(selector);
+  };
+
+  Mongo.Collection = MongoCollectionProxy;
+  _MongoCollectionProxy = MongoCollectionProxy;
 }

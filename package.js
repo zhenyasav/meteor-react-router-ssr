@@ -19,6 +19,9 @@ Package.onUse(function(api) {
     'meteorhacks:fast-render@2.9.0'
   ]);
 
+  api.use('mongo', 'server');
+  api.use('autopublish', 'server', {weak: true});
+
   api.imply(['reactrouter:react-router@0.1.6']);
 
   api.use(['routepolicy@1.0.5'], ['server']);

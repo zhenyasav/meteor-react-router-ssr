@@ -1,5 +1,7 @@
 Server-side rendering for react-router and react-meteor-data rehydratating Meteor subscriptions
 
+It has a protection against leaking your data. Only subscribed data will be available just the way it would be on the client.
+
 ## Install
 `meteor add reactrouter:react-router-ssr`
 
