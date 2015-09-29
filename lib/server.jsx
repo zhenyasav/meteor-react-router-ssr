@@ -64,9 +64,9 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
           Meteor.subscribe = function(name) {
             if (Package.mongo && !Package.autopublish) {
-              _MongoCollectionProxy.isSSR = true;
-              const publishResult = Meteor.server.publish_handlers[name].call(context);
               _MongoCollectionProxy.isSSR = false;
+              const publishResult = Meteor.server.publish_handlers[name].call(context);
+              _MongoCollectionProxy.isSSR = true;
 
               _MongoCollectionProxy._fakePublish(publishResult);
             }
@@ -167,13 +167,15 @@ if (Package.mongo && !Package.autopublish) {
         return super.find({ _id: -1 });
       }
 
-      if (arguments.length) {
-        arguments[0] = { $and: [arguments[0], { $or: MongoCollectionProxy._selectors[this._name] }] };
+      let args = Array.prototype.slice.call(arguments);
+
+      if (args.length) {
+        args[0] = { $and: [args[0], { $or: MongoCollectionProxy._selectors[this._name] }] };
       } else {
-        arguments.push({ $or: MongoCollectionProxy._selectors[this._name] });
+        args.push({ $or: MongoCollectionProxy._selectors[this._name] });
       }
 
-      return super.find.apply(this, arguments);
+      return super.find.apply(this, args);
     }
 
     findOne() {
@@ -186,17 +188,19 @@ if (Package.mongo && !Package.autopublish) {
         return super.findOne({ _id: -1 });
       }
 
-      if (arguments.length) {
-        if (typeof arguments[0] === 'string') {
-          arguments[0] = { _id: arguments[0] };
+      let args = Array.prototype.slice.call(arguments);
+
+      if (args.length) {
+        if (typeof args[0] === 'string') {
+          args[0] = { _id: args[0] };
         }
 
-        arguments[0] = { $and: [arguments[0], { $or: MongoCollectionProxy._selectors[this._name] }] };
+        args[0] = { $and: [args[0], { $or: MongoCollectionProxy._selectors[this._name] }] };
       } else {
-        arguments.push({ $or: MongoCollectionProxy._selectors[this._name] });
+        args.push({ $or: MongoCollectionProxy._selectors[this._name] });
       }
 
-      return super.findOne.apply(this, arguments);
+      return super.findOne.apply(this, args);
     }
   }
 
