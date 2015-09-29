@@ -1,6 +1,6 @@
 Package.describe({
   name: 'reactrouter:react-router-ssr',
-  version: '0.1.13',
+  version: '0.2.1',
   summary: 'Server-side rendering for react-router and react-meteor-data rehydratating Meteor subscriptions',
   git: 'https://github.com/thereactivestack/meteor-react-router-ssr.git',
   documentation: 'README.md'
@@ -19,8 +19,8 @@ Package.onUse(function(api) {
     'meteorhacks:fast-render@2.9.0'
   ]);
 
-  api.use('mongo', 'server');
-  api.use('autopublish', 'server', {weak: true});
+  api.use('mongo@1.0.0', 'server');
+  api.use('autopublish@1.0.0', 'server', {weak: true});
 
   api.imply(['reactrouter:react-router@0.1.6']);
 
