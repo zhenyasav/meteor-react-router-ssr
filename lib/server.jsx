@@ -185,7 +185,7 @@ if (Package.mongo && !Package.autopublish) {
       }
 
       // Make sure to return nothing if no publish has been called
-      if (!MongoCollectionProxy._selectors[_name] || !MongoCollectionProxy._selectors[this._name].length) {
+      if (!MongoCollectionProxy._selectors[this._name] || !MongoCollectionProxy._selectors[this._name].length) {
         return super.findOne({ _id: -1 });
       }
 
