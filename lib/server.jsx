@@ -85,6 +85,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
           global.__STYLE_COLLECTOR_MODULES__ = [];
           global.__STYLE_COLLECTOR__ = '';
+          global.__CHUNK_COLLECTOR__ = [];
 
           html = React.renderToString(
             <Router
@@ -123,6 +124,18 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           }
 
           data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
+
+          if (typeof serverOptions.webpackStats !== 'undefined') {
+            if (typeof serverOptions.webpackStats.assetsByChunkName.common !== 'undefined') {
+              data = data.replace('</head>', '<script type="text/javascript" src="' + serverOptions.webpackStats.publicPath + serverOptions.webpackStats.assetsByChunkName.common + '"></script></head>');
+            }
+
+            for (var i = 0; i < global.__CHUNK_COLLECTOR__.length; ++i) {
+              if (typeof serverOptions.webpackStats.assetsByChunkName[global.__CHUNK_COLLECTOR__[i]] !== 'undefined') {
+                data = data.replace('</head>', '<script type="text/javascript" src="' + serverOptions.webpackStats.publicPath + serverOptions.webpackStats.assetsByChunkName[global.__CHUNK_COLLECTOR__[i]] + '"></script></head>');
+              }
+            }
+          }
         }
 
         originalWrite.call(this, data);
