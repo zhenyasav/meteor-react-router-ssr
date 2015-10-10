@@ -74,7 +74,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
             context.subscribe.apply(context, arguments);
           };
 
-          if (Package.mongo) {
+          if (Package.mongo && !Package.autopublish) {
             _MongoCollectionProxy.isSSR = true;
             _MongoCollectionProxy._selectors = {};
           }
@@ -102,7 +102,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
           Meteor.subscribe = originalSubscribe;
 
-          if (Package.mongo) {
+          if (Package.mongo && !Package.autopublish) {
             _MongoCollectionProxy.isSSR = false;
           }
         });
