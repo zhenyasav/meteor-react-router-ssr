@@ -29,6 +29,12 @@ const url = Npm.require('url');
 const Fiber = Npm.require('fibers');
 const cookieParser = Npm.require('cookie-parser');
 
+let webpackStats;
+
+ReactRouterSSR.LoadWebpackStats = function(stats) {
+  webpackStats = stats;
+}
+
 ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
   if (!clientOptions) {
     clientOptions = {};
@@ -36,6 +42,10 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
   if (!serverOptions) {
     serverOptions = {};
+  }
+
+  if (!serverOptions.webpackStats) {
+    serverOptions.webpackStats = webpackStats;
   }
 
   Meteor.bindEnvironment(function() {
@@ -126,13 +136,24 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
 
           if (typeof serverOptions.webpackStats !== 'undefined') {
-            if (typeof serverOptions.webpackStats.assetsByChunkName.common !== 'undefined') {
-              data = data.replace('</head>', '<script type="text/javascript" src="' + serverOptions.webpackStats.publicPath + serverOptions.webpackStats.assetsByChunkName.common + '"></script></head>');
+            const chunkNames = serverOptions.webpackStats.assetsByChunkName;
+            const publicPath = serverOptions.webpackStats.publicPath;
+
+            if (typeof chunkNames.common !== 'undefined') {
+              var chunkSrc = (typeof chunkNames.common === 'string')?
+                chunkNames.common :
+                chunkNames.common[0];
+
+              data = data.replace('<head>', '<head><script type="text/javascript" src="' + publicPath + chunkSrc + '"></script>');
             }
 
             for (var i = 0; i < global.__CHUNK_COLLECTOR__.length; ++i) {
-              if (typeof serverOptions.webpackStats.assetsByChunkName[global.__CHUNK_COLLECTOR__[i]] !== 'undefined') {
-                data = data.replace('</head>', '<script type="text/javascript" src="' + serverOptions.webpackStats.publicPath + serverOptions.webpackStats.assetsByChunkName[global.__CHUNK_COLLECTOR__[i]] + '"></script></head>');
+              if (typeof chunkNames[global.__CHUNK_COLLECTOR__[i]] !== 'undefined') {
+                var chunkSrc = (typeof chunkNames[global.__CHUNK_COLLECTOR__[i]] === 'string')?
+                  chunkNames[global.__CHUNK_COLLECTOR__[i]] :
+                  chunkNames[global.__CHUNK_COLLECTOR__[i]][0];
+
+                data = data.replace('</head>', '<script type="text/javascript" src="' + publicPath + chunkSrc + '"></script></head>');
               }
             }
           }
