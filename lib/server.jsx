@@ -84,7 +84,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
           if (Package.mongo && !Package.autopublish) {
             Mongo.Collection._isSSR = true;
-            _Mongo.Collection._publishSelectorsSSR = {};
+            Mongo.Collection._publishSelectorsSSR = {};
           }
 
           if (serverOptions.preRender) {
