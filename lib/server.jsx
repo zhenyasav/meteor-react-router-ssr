@@ -1,5 +1,3 @@
-var _MongoCollectionProxy;
-
 // meteor algorithm to check if this is a meteor serving http request or not
 function IsAppUrl(req) {
   var url = req.url
@@ -74,19 +72,19 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
           Meteor.subscribe = function(name) {
             if (Package.mongo && !Package.autopublish) {
-              _MongoCollectionProxy.isSSR = false;
+              Mongo.Collection._isSSR = false;
               const publishResult = Meteor.server.publish_handlers[name].call(context);
-              _MongoCollectionProxy.isSSR = true;
+              Mongo.Collection._isSSR = true;
 
-              _MongoCollectionProxy._fakePublish(publishResult);
+              Mongo.Collection._fakePublish(publishResult);
             }
 
             context.subscribe.apply(context, arguments);
           };
 
           if (Package.mongo && !Package.autopublish) {
-            _MongoCollectionProxy.isSSR = true;
-            _MongoCollectionProxy._selectors = {};
+            Mongo.Collection._isSSR = true;
+            _Mongo.Collection._publishSelectorsSSR = {};
           }
 
           if (serverOptions.preRender) {
@@ -113,7 +111,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           Meteor.subscribe = originalSubscribe;
 
           if (Package.mongo && !Package.autopublish) {
-            _MongoCollectionProxy.isSSR = false;
+            Mongo.Collection._isSSR = false;
           }
         });
 
@@ -186,75 +184,68 @@ function moveScripts(data) {
 
 if (Package.mongo && !Package.autopublish) {
   // Protect against returning data that has not been published
-  class MongoCollectionProxy extends Mongo.Collection {
-    constructor(name, options) {
-      super(name, options);
-      this._name = name;
+  const originalFind = Mongo.Collection.prototype.find;
+  const originalFindOne = Mongo.Collection.prototype.findOne;
+
+  Mongo.Collection.prototype.findOne = function() {
+    if (!Mongo.Collection._isSSR) {
+      return originalFindOne.apply(this, arguments);
     }
 
-    find() {
-      if (!MongoCollectionProxy.isSSR) {
-        return super.find.apply(this, arguments);
-      }
-
-      // Make sure to return nothing if no publish has been called
-      if (!MongoCollectionProxy._selectors[this._name] || !MongoCollectionProxy._selectors[this._name].length) {
-        return super.find({ _id: -1 });
-      }
-
-      let args = Array.prototype.slice.call(arguments);
-
-      if (args.length) {
-        args[0] = { $and: [args[0], { $or: MongoCollectionProxy._selectors[this._name] }] };
-      } else {
-        args.push({ $or: MongoCollectionProxy._selectors[this._name] });
-      }
-
-      return super.find.apply(this, args);
+    // Make sure to return nothing if no publish has been called
+    if (!Mongo.Collection._publishSelectorsSSR[this._name] || !Mongo.Collection._publishSelectorsSSR[this._name].length) {
+      return originalFindOne({ _id: -1 });
     }
 
-    findOne() {
-      if (!MongoCollectionProxy.isSSR) {
-        return super.findOne.apply(this, arguments);
+    let args = Array.prototype.slice.call(arguments);
+
+    if (args.length) {
+      if (typeof args[0] === 'string') {
+        args[0] = { _id: args[0] };
       }
 
-      // Make sure to return nothing if no publish has been called
-      if (!MongoCollectionProxy._selectors[this._name] || !MongoCollectionProxy._selectors[this._name].length) {
-        return super.findOne({ _id: -1 });
-      }
-
-      let args = Array.prototype.slice.call(arguments);
-
-      if (args.length) {
-        if (typeof args[0] === 'string') {
-          args[0] = { _id: args[0] };
-        }
-
-        args[0] = { $and: [args[0], { $or: MongoCollectionProxy._selectors[this._name] }] };
-      } else {
-        args.push({ $or: MongoCollectionProxy._selectors[this._name] });
-      }
-
-      return super.findOne.apply(this, args);
+      args[0] = { $and: [args[0], { $or: Mongo.Collection._publishSelectorsSSR[this._name] }] };
+    } else {
+      args.push({ $or: Mongo.Collection._publishSelectorsSSR[this._name] });
     }
-  }
 
-  MongoCollectionProxy._fakePublish = function(result) {
+    return originalFindOne.apply(this, args);
+  };
+
+  Mongo.Collection.prototype.find = function() {
+    if (!Mongo.Collection._isSSR) {
+      return originalFind.apply(this, arguments);
+    }
+
+    // Make sure to return nothing if no publish has been called
+    if (!Mongo.Collection._publishSelectorsSSR[this._name] || !Mongo.Collection._publishSelectorsSSR[this._name].length) {
+      return originalFind({ _id: -1 });
+    }
+
+    let args = Array.prototype.slice.call(arguments);
+
+    if (args.length) {
+      args[0] = { $and: [args[0], { $or: Mongo.Collection._publishSelectorsSSR[this._name] }] };
+    } else {
+      args.push({ $or: Mongo.Collection._publishSelectorsSSR[this._name] });
+    }
+
+    return originalFind.apply(this, args);
+  };
+
+  Mongo.Collection._fakePublish = function(result) {
     if (Array.isArray(result)) {
-      result.forEach(subResult => MongoCollectionProxy._fakePublish(subResult));
+      result.forEach(subResult => Mongo.Collection._fakePublish(subResult));
       return;
     }
 
     const name = result._cursorDescription.collectionName;
     const selector = result._cursorDescription.selector;
 
-    if (!MongoCollectionProxy._selectors[name]) {
-      MongoCollectionProxy._selectors[name] = [];
+    if (!Mongo.Collection._publishSelectorsSSR[name]) {
+      Mongo.Collection._publishSelectorsSSR[name] = [];
     }
 
-    MongoCollectionProxy._selectors[name].push(selector);
+    Mongo.Collection._publishSelectorsSSR[name].push(selector);
   };
-
-  Mongo.Collection = MongoCollectionProxy;
-  _MongoCollectionProxy = MongoCollectionProxy;
 }
