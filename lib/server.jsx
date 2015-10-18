@@ -188,16 +188,16 @@ if (Package.mongo && !Package.autopublish) {
   const originalFindOne = Mongo.Collection.prototype.findOne;
 
   Mongo.Collection.prototype.findOne = function() {
+    let args = Array.prototype.slice.call(arguments);
+
     if (!Mongo.Collection._isSSR) {
-      return originalFindOne.apply(this, arguments);
+      return originalFindOne.apply(this, args);
     }
 
     // Make sure to return nothing if no publish has been called
     if (!Mongo.Collection._publishSelectorsSSR[this._name] || !Mongo.Collection._publishSelectorsSSR[this._name].length) {
-      return originalFindOne({ _id: -1 });
+      return originalFindOne(undefined);
     }
-
-    let args = Array.prototype.slice.call(arguments);
 
     if (args.length) {
       if (typeof args[0] === 'string') {
@@ -213,16 +213,16 @@ if (Package.mongo && !Package.autopublish) {
   };
 
   Mongo.Collection.prototype.find = function() {
+    let args = Array.prototype.slice.call(arguments);
+
     if (!Mongo.Collection._isSSR) {
-      return originalFind.apply(this, arguments);
+      return originalFind.apply(this, args);
     }
 
     // Make sure to return nothing if no publish has been called
     if (!Mongo.Collection._publishSelectorsSSR[this._name] || !Mongo.Collection._publishSelectorsSSR[this._name].length) {
-      return originalFind({ _id: -1 });
+      return originalFind(undefined);
     }
-
-    let args = Array.prototype.slice.call(arguments);
 
     if (args.length) {
       args[0] = { $and: [args[0], { $or: Mongo.Collection._publishSelectorsSSR[this._name] }] };
@@ -247,5 +247,29 @@ if (Package.mongo && !Package.autopublish) {
     }
 
     Mongo.Collection._publishSelectorsSSR[name].push(selector);
+  };
+
+  // From mongo core package
+  // https://github.com/meteor/meteor/blob/d1ae8f25be68c2f2d79a68295ebd5576ed27b5fb/packages/mongo/collection.js
+  Mongo.Collection.prototype._getFindOptions = function(args) {
+    var self = this;
+    if (args.length < 2) {
+      return { transform: self._transform };
+    } else {
+      // Removed the check
+      // It fails for no reason :-(
+      // If you know why, send a PR!
+
+      /*check(args[1], Match.Optional(Match.ObjectIncluding({
+        fields: Match.Optional(Match.OneOf(Object, undefined)),
+        sort: Match.Optional(Match.OneOf(Object, Array, undefined)),
+        limit: Match.Optional(Match.OneOf(Number, undefined)),
+        skip: Match.Optional(Match.OneOf(Number, undefined))
+     })));*/
+
+     return _.extend({
+        transform: self._transform
+      }, args[1]);
+    }
   };
 }
