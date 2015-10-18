@@ -1,6 +1,6 @@
 Package.describe({
   name: 'reactrouter:react-router-ssr',
-  version: '0.2.9',
+  version: '0.2.10',
   summary: 'Server-side rendering for react-router and react-meteor-data rehydratating Meteor subscriptions',
   git: 'https://github.com/thereactivestack/meteor-react-router-ssr.git',
   documentation: 'README.md'

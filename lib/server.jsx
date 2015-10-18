@@ -249,6 +249,7 @@ if (Package.mongo && !Package.autopublish) {
     Mongo.Collection._publishSelectorsSSR[name].push(selector);
   };
 
+  // TEMP FIX
   // From mongo core package
   // https://github.com/meteor/meteor/blob/d1ae8f25be68c2f2d79a68295ebd5576ed27b5fb/packages/mongo/collection.js
   Mongo.Collection.prototype._getFindOptions = function(args) {
