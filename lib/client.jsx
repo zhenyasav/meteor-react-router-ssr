@@ -29,7 +29,7 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
     let collectorEl = document.getElementById(clientOptions.styleCollectorId || 'css-style-collector-data')
 
     if (collectorEl) {
-      collectorEl.remove();
+      collectorEl.parentNode.removeChild(collectorEl);
     }
   });
 }
