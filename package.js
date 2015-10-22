@@ -19,6 +19,7 @@ Package.onUse(function(api) {
     'meteorhacks:fast-render@2.9.0'
   ]);
 
+  api.use('underscore@1.0.3', 'server');
   api.use('mongo@1.0.0', 'server');
   api.use('autopublish@1.0.0', 'server', {weak: true});
 
