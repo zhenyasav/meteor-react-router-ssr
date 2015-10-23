@@ -70,10 +70,10 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
         FastRender.frContext.withValue(context, function() {
           const originalSubscribe = Meteor.subscribe;
 
-          Meteor.subscribe = function(name) {
+          Meteor.subscribe = function(name, ...args) {
             if (Package.mongo && !Package.autopublish) {
               Mongo.Collection._isSSR = false;
-              const publishResult = Meteor.server.publish_handlers[name].call(context);
+              const publishResult = Meteor.server.publish_handlers[name].apply(context, args);
               Mongo.Collection._isSSR = true;
 
               Mongo.Collection._fakePublish(publishResult);
