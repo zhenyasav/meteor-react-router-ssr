@@ -18,7 +18,7 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
       document.body.appendChild(rootElement);
     }
 
-    React.render(
+    ReactDOM.render(
       <Router
         history={history}
         children={routes}

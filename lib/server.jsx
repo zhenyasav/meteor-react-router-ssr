@@ -95,7 +95,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           global.__STYLE_COLLECTOR__ = '';
           global.__CHUNK_COLLECTOR__ = [];
 
-          html = React.renderToString(
+          html = ReactDOMServer.renderToString(
             <Router
               history={history}
               children={routes}

@@ -7,7 +7,7 @@ It has a protection against leaking your data. Only subscribed data will be avai
 
 ## Usage
 ### `ReactRouterSSR.Run(routes, [clientOptions], [serverOptions])`
-The `routes` argument takes the routes you want react-router to use (you don't have to call `React.render()` yourself)<br />
+The `routes` argument takes the routes you want react-router to use (you don't have to call `ReactDOM.render()` yourself)<br />
 Read the [react-router documentation](https://github.com/rackt/react-router/tree/master/docs) for more informations.
 
 #### routes

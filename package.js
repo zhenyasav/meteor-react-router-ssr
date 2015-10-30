@@ -15,6 +15,7 @@ Package.onUse(function(api) {
   api.use([
     'jsx@0.1.0',
     'react-meteor-data@0.1.5',
+    'react-runtime@0.14.0',
     'reactrouter:react-router@0.1.6',
     'meteorhacks:fast-render@2.9.0'
   ]);
