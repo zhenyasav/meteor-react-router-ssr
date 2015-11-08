@@ -71,9 +71,11 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           const originalSubscribe = Meteor.subscribe;
 
           Meteor.subscribe = function(name, ...args) {
+            stubSubscribeContext(context);
+
             if (Package.mongo && !Package.autopublish) {
               Mongo.Collection._isSSR = false;
-              const publishResult = Meteor.server.publish_handlers[name].apply(stubSubscribe(context), args);
+              const publishResult = Meteor.server.publish_handlers[name].apply(context, args);
               Mongo.Collection._isSSR = true;
 
               Mongo.Collection._fakePublish(publishResult);
@@ -184,19 +186,15 @@ function moveScripts(data) {
 
 const noop = function() {};
 
-// Fake the subscribe context for SSR only
-function stubSubscribe(context) {
-  return {
-    userId: context.userId,
-    added: noop,
-    changed: noop,
-    removed: noop,
-    ready: noop,
-    onStop: noop,
-    error: noop,
-    stop: noop,
-    connection: {}
-  };
+// Stub the missing functions to stub a regular subscription
+function stubSubscribeContext(context) {
+  context.added =
+  context.changed =
+  context.removed =
+  context.ready =
+  context.onStop =
+  context.error =
+  context.stop = noop;
 }
 
 if (Package.mongo && !Package.autopublish) {
@@ -213,7 +211,7 @@ if (Package.mongo && !Package.autopublish) {
 
     // Make sure to return nothing if no publish has been called
     if (!Mongo.Collection._publishSelectorsSSR[this._name] || !Mongo.Collection._publishSelectorsSSR[this._name].length) {
-      return originalFindOne(undefined);
+      return originalFindOne.apply(this, [undefined]);
     }
 
     if (args.length) {
@@ -238,7 +236,7 @@ if (Package.mongo && !Package.autopublish) {
 
     // Make sure to return nothing if no publish has been called
     if (!Mongo.Collection._publishSelectorsSSR[this._name] || !Mongo.Collection._publishSelectorsSSR[this._name].length) {
-      return originalFind(undefined);
+      return originalFind.apply(this, [undefined]);
     }
 
     if (args.length) {
