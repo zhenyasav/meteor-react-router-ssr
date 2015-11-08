@@ -73,7 +73,7 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           Meteor.subscribe = function(name, ...args) {
             if (Package.mongo && !Package.autopublish) {
               Mongo.Collection._isSSR = false;
-              const publishResult = Meteor.server.publish_handlers[name].apply(context, args);
+              const publishResult = Meteor.server.publish_handlers[name].apply(stubSubscribe(context), args);
               Mongo.Collection._isSSR = true;
 
               Mongo.Collection._fakePublish(publishResult);
@@ -180,6 +180,23 @@ function moveScripts(data) {
   $('head').html($('head').html().replace(/(^[ \t]*\n)/gm, ''));
 
   return $.html();
+}
+
+const noop = function() {};
+
+// Fake the subscribe context for SSR only
+function stubSubscribe(context) {
+  return {
+    userId: context.userId,
+    added: noop,
+    changed: noop,
+    removed: noop,
+    ready: noop,
+    onStop: noop,
+    error: noop,
+    stop: noop,
+    connection: {}
+  };
 }
 
 if (Package.mongo && !Package.autopublish) {
