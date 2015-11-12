@@ -71,8 +71,6 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           const originalSubscribe = Meteor.subscribe;
 
           Meteor.subscribe = function(name, ...args) {
-            stubSubscribeContext(context);
-
             if (Package.mongo && !Package.autopublish) {
               Mongo.Collection._isSSR = false;
               const publishResult = Meteor.server.publish_handlers[name].apply(context, args);
@@ -88,6 +86,13 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
             Mongo.Collection._isSSR = true;
             Mongo.Collection._publishSelectorsSSR = {};
           }
+
+          const originalUserId = Meteor.userId;
+          const originalUser = Meteor.user;
+
+          // This should be the state of the client when he remount the app
+          Meteor.userId = () => context.userId;
+          Meteor.user = () => undefined;
 
           if (serverOptions.preRender) {
             serverOptions.preRender(req, res);
@@ -111,6 +116,8 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           }
 
           Meteor.subscribe = originalSubscribe;
+          Meteor.userId = originalUserId;
+          Meteor.user = originalUser;
 
           if (Package.mongo && !Package.autopublish) {
             Mongo.Collection._isSSR = false;
@@ -182,19 +189,6 @@ function moveScripts(data) {
   $('head').html($('head').html().replace(/(^[ \t]*\n)/gm, ''));
 
   return $.html();
-}
-
-const noop = function() {};
-
-// Stub the missing functions to stub a regular subscription
-function stubSubscribeContext(context) {
-  context.added =
-  context.changed =
-  context.removed =
-  context.ready =
-  context.onStop =
-  context.error =
-  context.stop = noop;
 }
 
 if (Package.mongo && !Package.autopublish) {
