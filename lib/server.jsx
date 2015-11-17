@@ -80,6 +80,11 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
             }
 
             context.subscribe.apply(context, arguments);
+
+            return {
+              stop() {}, // Nothing to stop on server-rendering
+              ready() { return true; } // server gets the data straight away
+            };
           };
 
           if (Package.mongo && !Package.autopublish) {
