@@ -107,12 +107,18 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
           global.__STYLE_COLLECTOR__ = '';
           global.__CHUNK_COLLECTOR__ = [];
 
-          html = ReactDOMServer.renderToString(
+          let app = (
             <Router
               history={history}
               children={routes}
               {...serverOptions.props} />
           );
+
+          if (serverOptions.wrapper) {
+            app = <serverOptions.wrapper>{app}</serverOptions.wrapper>;
+          }
+
+          html = ReactDOMServer.renderToString(app);
 
           css = global.__STYLE_COLLECTOR__;
 

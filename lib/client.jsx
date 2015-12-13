@@ -18,13 +18,18 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
       document.body.appendChild(rootElement);
     }
 
-    ReactDOM.render(
+    let app = (
       <Router
         history={history}
         children={routes}
         {...clientOptions.props} />
-      , rootElement
     );
+
+    if (clientOptions.wrapper) {
+      app = <clientOptions.wrapper>{app}</clientOptions.wrapper>;
+    }
+
+    ReactDOM.render(app, rootElement);
 
     let collectorEl = document.getElementById(clientOptions.styleCollectorId || 'css-style-collector-data')
 

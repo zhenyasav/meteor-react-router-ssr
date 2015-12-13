@@ -18,12 +18,14 @@ Your main `<Route />` node of your application.<br />
 - `rootElement` [string]: The root element ID your React application is mounted (default to `react-app`)
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the client.
 - `history`: History object to use. You can use `new ReactRouter.history.createHistory()`, `new ReactRouter.history.createHashHistory()` or `new ReactRouter.history.createMemoryHistory()`
+- `wrapper` [React component]: Wrapping your whole application client-side
 
 #### serverOptions (optional)
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the server.
 - `preRender` [function(req, res)]: Executed just before the renderToString
 - `postRender` [function(req, res)]: Executed just after the renderToString
 - `dontMoveScripts` [bool]: Keep the script inside the head tag instead of moving it at the end of the body
+- `wrapper` [React component]: Wrapping your whole application server-side
 
 ## Simple Example
 ```javascript
