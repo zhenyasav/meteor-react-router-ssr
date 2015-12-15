@@ -2,6 +2,8 @@ Server-side rendering for react-router and react-meteor-data rehydratating Meteo
 
 It has a protection against leaking your data. Only subscribed data will be available just the way it would be on the client.
 
+What about your SEO? Just add [`nfl:react-helmet`](https://atmospherejs.com/nfl/react-helmet) package and it will take care of adding your page title / meta tags on server-rendering.
+
 ## Install
 `meteor add reactrouter:react-router-ssr`
 
