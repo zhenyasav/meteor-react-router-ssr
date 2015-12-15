@@ -1,3 +1,7 @@
+// TODO: Ajouter un uid que le res garde
+// TODO: Trouver une facon d'envoyer le uid aux fonctions du router
+
+
 // meteor algorithm to check if this is a meteor serving http request or not
 function IsAppUrl(req) {
   var url = req.url
@@ -22,7 +26,7 @@ function IsAppUrl(req) {
   return true;
 }
 
-const {Router} = ReactRouter;
+const { RoutingContext } = ReactRouter;
 const url = Npm.require('url');
 const Fiber = Npm.require('fibers');
 const cookieParser = Npm.require('cookie-parser');
@@ -56,147 +60,180 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
         return;
       }
 
-      const history = ReactRouter.history.createMemoryHistory(req.url);
+      global.__CHUNK_COLLECTOR__ = [];
 
-      var path = req.url;
       var loginToken = req.cookies['meteor_login_token'];
       var headers = req.headers;
+      var context = new FastRender._Context(loginToken, { headers });
 
-      var css = null;
-      var html = null;
-      var head = null;
+      const originalUserId = Meteor.userId;
+      const originalUser = Meteor.user;
 
-      var context = new FastRender._Context(loginToken, { headers: headers });
+      // This should be the state of the client when he remount the app
+      Meteor.userId = () => context.userId;
+      Meteor.user = () => undefined;
 
-      try {
-        FastRender.frContext.withValue(context, function() {
-          const originalSubscribe = Meteor.subscribe;
-
-          Meteor.subscribe = function(name, ...args) {
-            if (Package.mongo && !Package.autopublish) {
-              Mongo.Collection._isSSR = false;
-              const publishResult = Meteor.server.publish_handlers[name].apply(context, args);
-              Mongo.Collection._isSSR = true;
-
-              Mongo.Collection._fakePublish(publishResult);
-            }
-
-            context.subscribe.apply(context, arguments);
-
-            return {
-              stop() {}, // Nothing to stop on server-rendering
-              ready() { return true; } // server gets the data straight away
-            };
-          };
-
-          if (Package.mongo && !Package.autopublish) {
-            Mongo.Collection._isSSR = true;
-            Mongo.Collection._publishSelectorsSSR = {};
-          }
-
-          const originalUserId = Meteor.userId;
-          const originalUser = Meteor.user;
-
-          // This should be the state of the client when he remount the app
-          Meteor.userId = () => context.userId;
-          Meteor.user = () => undefined;
-
-          if (serverOptions.preRender) {
-            serverOptions.preRender(req, res);
-          }
-
-          global.__STYLE_COLLECTOR_MODULES__ = [];
-          global.__STYLE_COLLECTOR__ = '';
-          global.__CHUNK_COLLECTOR__ = [];
-
-          let app = (
-            <Router
-              history={history}
-              children={routes}
-              {...serverOptions.props} />
-          );
-
-          if (serverOptions.wrapper) {
-            app = <serverOptions.wrapper>{app}</serverOptions.wrapper>;
-          }
-
-          html = ReactDOMServer.renderToString(app);
-
-          if (Package['nfl:react-helmet']) {
-            head = ReactHelmet.rewind();
-          }
-
-          css = global.__STYLE_COLLECTOR__;
-
-          if (serverOptions.postRender) {
-            serverOptions.postRender(req, res);
-          }
-
-          Meteor.subscribe = originalSubscribe;
-          Meteor.userId = originalUserId;
-          Meteor.user = originalUser;
-
-          if (Package.mongo && !Package.autopublish) {
-            Mongo.Collection._isSSR = false;
-          }
-        });
-
-        res.pushData('fast-render-data', context.getData());
-      } catch(err) {
-        console.error('error while server-rendering', err.stack);
-      }
-
-      var originalWrite = res.write;
-      res.write = function(data) {
-        if(typeof data === 'string' && data.indexOf('<!DOCTYPE html>') === 0) {
-          if (!serverOptions.dontMoveScripts) {
-            data = moveScripts(data);
-          }
-
-          if (css) {
-            data = data.replace('</head>', '<style id="' + (clientOptions.styleCollectorId || 'css-style-collector-data') + '">' + css + '</style></head>');
-          }
-
-          if (head) {
-            // Add react-helmet stuff in the header (yay SEO!)
-            data = data.replace('<head>',
-              '<head>' + head.title + head.base + head.meta + head.link + head.script
-            );
-          }
-
-          data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
-
-          if (typeof serverOptions.webpackStats !== 'undefined') {
-            const chunkNames = serverOptions.webpackStats.assetsByChunkName;
-            const publicPath = serverOptions.webpackStats.publicPath;
-
-            if (typeof chunkNames.common !== 'undefined') {
-              var chunkSrc = (typeof chunkNames.common === 'string')?
-                chunkNames.common :
-                chunkNames.common[0];
-
-              data = data.replace('<head>', '<head><script type="text/javascript" src="' + publicPath + chunkSrc + '"></script>');
-            }
-
-            for (var i = 0; i < global.__CHUNK_COLLECTOR__.length; ++i) {
-              if (typeof chunkNames[global.__CHUNK_COLLECTOR__[i]] !== 'undefined') {
-                var chunkSrc = (typeof chunkNames[global.__CHUNK_COLLECTOR__[i]] === 'string')?
-                  chunkNames[global.__CHUNK_COLLECTOR__[i]] :
-                  chunkNames[global.__CHUNK_COLLECTOR__[i]][0];
-
-                data = data.replace('</head>', '<script type="text/javascript" src="' + publicPath + chunkSrc + '"></script></head>');
-              }
-            }
-          }
+      // On the server, no route should be async (I guess we trust the app)
+      ReactRouter.match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
+        if (err) {
+          res.writeHead(500);
+          res.write(err.messages);
+          res.end();
+        } else if (redirectLocation) {
+          res.writeHead(302, { Location: redirectLocation.pathname + redirectLocation.search })
+          res.end();
+        } else if (renderProps) {
+          sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps);
+        } else {
+          res.writeHead(404);
+          res.write('Not found');
+          res.end();
         }
+      }));
 
-        originalWrite.call(this, data);
-      };
-
-      next();
+      Meteor.userId = originalUserId;
+      Meteor.user = originalUser;
     }));
   })();
 };
+
+function sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps) {
+  const { css, html, head } = generateSSRData(serverOptions, context, req, res, renderProps);
+  res.write = patchResWrite(clientOptions, serverOptions, res.write, css, html, head);
+
+  next();
+}
+
+function patchResWrite(clientOptions, serverOptions, originalWrite, css, html, head) {
+  return function(data) {
+    if(typeof data === 'string' && data.indexOf('<!DOCTYPE html>') === 0) {
+      if (!serverOptions.dontMoveScripts) {
+        data = moveScripts(data);
+      }
+
+      if (css) {
+        data = data.replace('</head>', '<style id="' + (clientOptions.styleCollectorId || 'css-style-collector-data') + '">' + css + '</style></head>');
+      }
+
+      if (head) {
+        // Add react-helmet stuff in the header (yay SEO!)
+        data = data.replace('<head>',
+          '<head>' + head.title + head.base + head.meta + head.link + head.script
+        );
+      }
+
+      data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
+
+      if (typeof serverOptions.webpackStats !== 'undefined') {
+        data = addAssetsChunks(serverOptions, data);
+      }
+    }
+
+    originalWrite.call(this, data);
+  }
+}
+
+function addAssetsChunks(serverOptions, data) {
+  const chunkNames = serverOptions.webpackStats.assetsByChunkName;
+  const publicPath = serverOptions.webpackStats.publicPath;
+
+  if (typeof chunkNames.common !== 'undefined') {
+    var chunkSrc = (typeof chunkNames.common === 'string')?
+      chunkNames.common :
+      chunkNames.common[0];
+
+    data = data.replace('<head>', '<head><script type="text/javascript" src="' + publicPath + chunkSrc + '"></script>');
+  }
+
+  for (var i = 0; i < global.__CHUNK_COLLECTOR__.length; ++i) {
+    if (typeof chunkNames[global.__CHUNK_COLLECTOR__[i]] !== 'undefined') {
+      var chunkSrc = (typeof chunkNames[global.__CHUNK_COLLECTOR__[i]] === 'string')?
+        chunkNames[global.__CHUNK_COLLECTOR__[i]] :
+        chunkNames[global.__CHUNK_COLLECTOR__[i]][0];
+
+      data = data.replace('</head>', '<script type="text/javascript" src="' + publicPath + chunkSrc + '"></script></head>');
+    }
+  }
+
+  return data;
+}
+
+function generateSSRData(serverOptions, context, req, res, renderProps) {
+  let html, css, head;
+
+  try {
+    FastRender.frContext.withValue(context, function() {
+      const originalSubscribe = Meteor.subscribe;
+      Meteor.subscribe = SSRSubscribe(context);
+
+      if (Package.mongo && !Package.autopublish) {
+        Mongo.Collection._isSSR = true;
+        Mongo.Collection._publishSelectorsSSR = {};
+      }
+
+      if (serverOptions.preRender) {
+        serverOptions.preRender(req, res);
+      }
+
+      global.__STYLE_COLLECTOR_MODULES__ = [];
+      global.__STYLE_COLLECTOR__ = '';
+
+      renderProps = {
+        ...renderProps,
+        ...serverOptions.props
+      };
+
+      let app = <RoutingContext {...renderProps} />;
+
+      if (serverOptions.wrapper) {
+        app = <serverOptions.wrapper>{app}</serverOptions.wrapper>;
+      }
+
+      html = ReactDOMServer.renderToString(app);
+
+      if (Package['nfl:react-helmet']) {
+        head = ReactHelmet.rewind();
+      }
+
+      css = global.__STYLE_COLLECTOR__;
+
+      if (serverOptions.postRender) {
+        serverOptions.postRender(req, res);
+      }
+
+      Meteor.subscribe = originalSubscribe;
+
+      if (Package.mongo && !Package.autopublish) {
+        Mongo.Collection._isSSR = false;
+      }
+    });
+
+    res.pushData('fast-render-data', context.getData());
+  } catch(err) {
+    console.error('error while server-rendering', err.stack);
+  }
+
+  return { html, css, head };
+}
+
+function SSRSubscribe(context) {
+  return function(name, ...args) {
+    if (Package.mongo && !Package.autopublish) {
+      Mongo.Collection._isSSR = false;
+      const publishResult = Meteor.server.publish_handlers[name].apply(context, args);
+      Mongo.Collection._isSSR = true;
+
+      Mongo.Collection._fakePublish(publishResult);
+    }
+
+    context.subscribe.apply(context, arguments);
+
+    return {
+      stop() {}, // Nothing to stop on server-rendering
+      ready() { return true; } // server gets the data straight away
+    };
+  }
+}
 
 // Thank you FlowRouter for this wonderful idea :)
 // https://github.com/kadirahq/flow-router/blob/ssr/server/route.js
