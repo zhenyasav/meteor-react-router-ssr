@@ -63,6 +63,8 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
       var headers = req.headers;
 
       var css = null;
+      var html = null;
+      var head = null;
 
       var context = new FastRender._Context(loginToken, { headers: headers });
 
@@ -120,6 +122,10 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
           html = ReactDOMServer.renderToString(app);
 
+          if (Package['nfl:react-helmet']) {
+            head = ReactHelmet.rewind();
+          }
+
           css = global.__STYLE_COLLECTOR__;
 
           if (serverOptions.postRender) {
@@ -149,6 +155,13 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
 
           if (css) {
             data = data.replace('</head>', '<style id="' + (clientOptions.styleCollectorId || 'css-style-collector-data') + '">' + css + '</style></head>');
+          }
+
+          if (head) {
+            // Add react-helmet stuff in the header (yay SEO!)
+            data = data.replace('<head>',
+              '<head>' + head.title + head.base + head.meta + head.link + head.script
+            );
           }
 
           data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');

@@ -23,6 +23,7 @@ Package.onUse(function(api) {
   api.use('underscore@1.0.3', 'server');
   api.use('mongo@1.0.0', 'server');
   api.use('autopublish@1.0.0', 'server', {weak: true});
+  api.use('nfl:react-helmet@2.2.0', 'server', {weak: true});
 
   api.imply(['reactrouter:react-router@1.0.2']);
 
