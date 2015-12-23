@@ -214,9 +214,10 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       // If using redux, pass the resulting redux state to the client so that it
       // can hydrate from there.
       if (reduxStore) {
-        // @todo JSON.parse(JSON.stringify()) is used to reduce possible immutables down to
-        // pure Javascript. There is probably a smarter way.
-        res.pushData('redux-initial-state', JSON.parse(JSON.stringify(reduxStore.getState())));
+        // inject-data accepts raw objects and calls EJSON.stringify() on them,
+        // but the _.each() done in there does not play nice if the store contains
+        // ImmutableJS data. To avoid that, we serialize ourselves.
+        res.pushData('redux-initial-state', JSON.stringify(reduxStore.getState()));
       }
 
       if (Package['nfl:react-helmet']) {
