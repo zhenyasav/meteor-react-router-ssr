@@ -21,9 +21,9 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
     // If using redux, create the store with the initial state sent by the server. 
     let reduxStore;
     if (typeof clientOptions.createReduxStore !== 'undefined') {
-      let initialData;
-      InjectData.getData('redux-initial-state', data => {initialData = data});
-      reduxStore = clientOptions.createReduxStore(initialData, history);
+      let initialState;
+      InjectData.getData('redux-initial-state', data => {initialState = data});
+      reduxStore = clientOptions.createReduxStore(history, initialState);
     }
 
     let app = (
