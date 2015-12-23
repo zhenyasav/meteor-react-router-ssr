@@ -18,6 +18,14 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
       document.body.appendChild(rootElement);
     }
 
+    // If using redux, create the store with the initial state sent by the server. 
+    let reduxStore;
+    if (typeof clientOptions.createReduxStore !== 'undefined') {
+      let initialData;
+      InjectData.getData('redux-initial-state', data => {initialData = data});
+      reduxStore = clientOptions.createReduxStore(initialData, history);
+    }
+
     let app = (
       <Router
         history={history}
@@ -26,7 +34,13 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
     );
 
     if (clientOptions.wrapper) {
-      app = <clientOptions.wrapper>{app}</clientOptions.wrapper>;
+      const wrapperProps = {};
+      // Pass the redux store to the wrapper, which is supposed to be some
+      // flavour or react-redux's <Provider>.
+      if (reduxStore) {
+        wrapperProps.store = reduxStore;
+      }
+      app = <clientOptions.wrapper {...wrapperProps}>{app}</clientOptions.wrapper>;
     }
 
     ReactDOM.render(app, rootElement);

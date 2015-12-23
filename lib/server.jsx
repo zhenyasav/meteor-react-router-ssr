@@ -82,13 +82,13 @@ ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
         } else if (redirectLocation) {
           res.writeHead(302, { Location: redirectLocation.pathname + redirectLocation.search })
           res.end();
-        } else if (renderProps) {
-          sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps);
-        } else {
+        } else if (!renderProps) {
           res.writeHead(404);
           res.write('Not found');
           res.end();
         }
+
+        sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps);
       }));
 
       Meteor.userId = originalUserId;
@@ -183,13 +183,41 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
         ...serverOptions.props
       };
 
-      let app = <RoutingContext {...renderProps} />;
-
-      if (serverOptions.wrapper) {
-        app = <serverOptions.wrapper>{app}</serverOptions.wrapper>;
+      // If using redux, create the store.
+      let reduxStore;
+      if (typeof serverOptions.createReduxStore !== 'undefined') {
+        // Create a history and set the current path, in case the callback wants
+        // to bind it to the store using redux-simple-router's syncReduxAndRouter().
+        const reduxHistory = history.useQueries(history.createMemoryHistory)();
+        reduxHistory.replace(req.url);
+        // Create the store.
+        reduxStore = serverOptions.createReduxStore(reduxHistory);
+        // Fetch components data.
+        fetchComponentData(renderProps, reduxStore);
       }
 
+      // Wrap the <RoutingContext> if needed before rendering it.
+      let app = <RoutingContext {...renderProps} />;
+      if (serverOptions.wrapper) {
+        const wrapperProps = {};
+        // Pass the redux store to the wrapper, which is supposed to be some
+        // flavour or react-redux's <Provider>.
+        if (reduxStore) {
+          wrapperProps.store = reduxStore;
+        }
+        app = <serverOptions.wrapper {...wrapperProps}>{app}</serverOptions.wrapper>;
+      }
+
+      // Do the rendering.
       html = ReactDOMServer.renderToString(app);
+
+      // If using redux, pass the resulting redux state to the client so that it
+      // can hydrate from there.
+      if (reduxStore) {
+        // @todo JSON.parse(JSON.stringify()) is used to reduce possible immutables down to
+        // pure Javascript. There is probably a smarter way.
+        res.pushData('redux-initial-state', JSON.parse(JSON.stringify(reduxStore.getState())));
+      }
 
       if (Package['nfl:react-helmet']) {
         head = ReactHelmet.rewind();
@@ -214,6 +242,20 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
   }
 
   return { html, css, head };
+}
+
+function fetchComponentData(renderProps, reduxStore) {
+  const promises = renderProps.components
+    // Weed out 'undefined' routes.
+    .filter(component => !!component)
+    // Only look at components with a static fetchData() method
+    .filter(component => component.fetchData)
+    // Call the fetchData() methods, which lets the component dispatch possibly
+    // asynchronous actions, and collect the promises.
+    .map(component => component.fetchData(reduxStore.getState, reduxStore.dispatch, renderProps));
+
+  // Wait until all promises have been resolved.
+  Promise.all(promises).await();
 }
 
 function SSRSubscribe(context) {
