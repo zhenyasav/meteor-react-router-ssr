@@ -36,7 +36,7 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
     if (clientOptions.wrapper) {
       const wrapperProps = {};
       // Pass the redux store to the wrapper, which is supposed to be some
-      // flavour or react-redux's <Provider>.
+      // flavour of react-redux's <Provider>.
       if (reduxStore) {
         wrapperProps.store = reduxStore;
       }

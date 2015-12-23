@@ -201,7 +201,7 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       if (serverOptions.wrapper) {
         const wrapperProps = {};
         // Pass the redux store to the wrapper, which is supposed to be some
-        // flavour or react-redux's <Provider>.
+        // flavour of react-redux's <Provider>.
         if (reduxStore) {
           wrapperProps.store = reduxStore;
         }
