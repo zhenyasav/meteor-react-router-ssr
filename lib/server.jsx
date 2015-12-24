@@ -256,7 +256,7 @@ function fetchComponentData(renderProps, reduxStore) {
     .map(component => component.fetchData(reduxStore.getState, reduxStore.dispatch, renderProps));
 
   // Wait until all promises have been resolved.
-  Promise.all(promises).await();
+  Promise.awaitAll(promises);
 }
 
 function SSRSubscribe(context) {
