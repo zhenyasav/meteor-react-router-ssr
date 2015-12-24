@@ -23,7 +23,7 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
     if (typeof clientOptions.createReduxStore !== 'undefined') {
       let initialState;
       InjectData.getData('redux-initial-state', data => {initialState = JSON.parse(data)});
-      reduxStore = clientOptions.createReduxStore(history, initialState);
+      reduxStore = clientOptions.createReduxStore(initialState, history);
     }
 
     let app = (
