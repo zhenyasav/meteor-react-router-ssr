@@ -246,13 +246,24 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
 }
 
 function fetchComponentData(renderProps, reduxStore) {
-  const promises = renderProps.components
+  const componentsWithFetch = renderProps.components
     // Weed out 'undefined' routes.
     .filter(component => !!component)
     // Only look at components with a static fetchData() method
-    .filter(component => component.fetchData)
-    // Call the fetchData() methods, which lets the component dispatch possibly
-    // asynchronous actions, and collect the promises.
+    .filter(component => component.fetchData);
+
+  if (!componentsWithFetch.length) {
+    return;
+  }
+
+  if (!Package.promise) {
+    console.error("react-router-ssr: Support for fetchData() static methods on route components requires the 'promise' package.");
+    return;
+  }
+
+  // Call the fetchData() methods, which lets the component dispatch possibly
+  // asynchronous actions, and collect the promises.
+  const promises = componentsWithFetch
     .map(component => component.fetchData(reduxStore.getState, reduxStore.dispatch, renderProps));
 
   // Wait until all promises have been resolved.
