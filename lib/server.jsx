@@ -188,10 +188,10 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       if (typeof serverOptions.createReduxStore !== 'undefined') {
         // Create a history and set the current path, in case the callback wants
         // to bind it to the store using redux-simple-router's syncReduxAndRouter().
-        const reduxHistory = history.useQueries(history.createMemoryHistory)();
-        reduxHistory.replace(req.url);
+        const history = ReactRouter.history.useQueries(ReactRouter.history.createMemoryHistory)();
+        history.replace(req.url);
         // Create the store, with no initial state.
-        reduxStore = serverOptions.createReduxStore(undefined, reduxHistory);
+        reduxStore = serverOptions.createReduxStore(undefined, history);
         // Fetch components data.
         fetchComponentData(renderProps, reduxStore);
       }
