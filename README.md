@@ -133,7 +133,7 @@ Meteor.startup(() => {
       syncReduxAndRouter(history, store);
       return store;
     }
-  });
+  };
   // Use the same 'wrapper' and 'createReduxStore' in serverOptions, or adjust to your needs.
   const serverOptions = clientOptions;
   
