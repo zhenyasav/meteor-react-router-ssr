@@ -49,8 +49,8 @@ react-runtime@0.14.1_1
 react-runtime-dev@0.14.1
 react-runtime-prod@0.14.1
 reactive-var@1.0.6
-reactrouter:react-router@1.0.2
-reactrouter:react-router-ssr@1.0.2_2
+reactrouter:react-router@1.0.3
+reactrouter:react-router-ssr@1.0.3
 retry@1.0.4
 routepolicy@1.0.6
 service-configuration@1.0.5
