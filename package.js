@@ -17,13 +17,15 @@ Package.onUse(function(api) {
     'react-meteor-data@0.2.4',
     'react-runtime@0.14.0',
     'reactrouter:react-router@1.0.2',
-    'meteorhacks:fast-render@2.9.0'
+    'meteorhacks:fast-render@2.9.0',
+    'meteorhacks:inject-data@1.4.0'
   ]);
 
   api.use('underscore@1.0.3', 'server');
   api.use('mongo@1.0.0', 'server');
   api.use('autopublish@1.0.0', 'server', {weak: true});
   api.use('nfl:react-helmet@2.2.0', 'server', {weak: true});
+  api.use('promise@0.5.1', 'server', {weak: true});
 
   api.imply(['reactrouter:react-router@1.0.2']);
 

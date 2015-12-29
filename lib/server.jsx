@@ -183,13 +183,42 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
         ...serverOptions.props
       };
 
-      let app = <RoutingContext {...renderProps} />;
-
-      if (serverOptions.wrapper) {
-        app = <serverOptions.wrapper>{app}</serverOptions.wrapper>;
+      // If using redux, create the store.
+      let reduxStore;
+      if (typeof serverOptions.createReduxStore !== 'undefined') {
+        // Create a history and set the current path, in case the callback wants
+        // to bind it to the store using redux-simple-router's syncReduxAndRouter().
+        const history = ReactRouter.history.useQueries(ReactRouter.history.createMemoryHistory)();
+        history.replace(req.url);
+        // Create the store, with no initial state.
+        reduxStore = serverOptions.createReduxStore(undefined, history);
+        // Fetch components data.
+        fetchComponentData(renderProps, reduxStore);
       }
 
+      // Wrap the <RoutingContext> if needed before rendering it.
+      let app = <RoutingContext {...renderProps} />;
+      if (serverOptions.wrapper) {
+        const wrapperProps = {};
+        // Pass the redux store to the wrapper, which is supposed to be some
+        // flavour of react-redux's <Provider>.
+        if (reduxStore) {
+          wrapperProps.store = reduxStore;
+        }
+        app = <serverOptions.wrapper {...wrapperProps}>{app}</serverOptions.wrapper>;
+      }
+
+      // Do the rendering.
       html = ReactDOMServer.renderToString(app);
+
+      // If using redux, pass the resulting redux state to the client so that it
+      // can hydrate from there.
+      if (reduxStore) {
+        // inject-data accepts raw objects and calls EJSON.stringify() on them,
+        // but the _.each() done in there does not play nice if the store contains
+        // ImmutableJS data. To avoid that, we serialize ourselves.
+        res.pushData('redux-initial-state', JSON.stringify(reduxStore.getState()));
+      }
 
       if (Package['nfl:react-helmet']) {
         head = ReactHelmet.rewind();
@@ -214,6 +243,31 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
   }
 
   return { html, css, head };
+}
+
+function fetchComponentData(renderProps, reduxStore) {
+  const componentsWithFetch = renderProps.components
+    // Weed out 'undefined' routes.
+    .filter(component => !!component)
+    // Only look at components with a static fetchData() method
+    .filter(component => component.fetchData);
+
+  if (!componentsWithFetch.length) {
+    return;
+  }
+
+  if (!Package.promise) {
+    console.error("react-router-ssr: Support for fetchData() static methods on route components requires the 'promise' package.");
+    return;
+  }
+
+  // Call the fetchData() methods, which lets the component dispatch possibly
+  // asynchronous actions, and collect the promises.
+  const promises = componentsWithFetch
+    .map(component => component.fetchData(reduxStore.getState, reduxStore.dispatch, renderProps));
+
+  // Wait until all promises have been resolved.
+  Promise.awaitAll(promises);
 }
 
 function SSRSubscribe(context) {
