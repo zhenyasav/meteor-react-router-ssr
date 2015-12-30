@@ -122,7 +122,23 @@ function patchResWrite(clientOptions, serverOptions, originalWrite, css, html, h
         );
       }
 
-      data = data.replace('<body>', '<body><div id="' + (clientOptions.rootElement || 'react-app') + '">' + html + '</div>');
+      /*
+       To set multiple root element attributes such as class and style tags, simply pass it a 2-dimensional array
+       of attribute value pairs. I.e. [["class", "sidebar main"], ["style", "background-color: white"]]
+       */
+      let rootElementAttributes = '';
+      const attributes = clientOptions.rootElementAttributes instanceof Array ? clientOptions.rootElementAttributes : [];
+      // check if a 2-dimensional array was passed... if not, be nice and handle it anyway
+      if(attributes[0] instanceof Array) {
+        // set as concatenated string attributes
+        for(var i = 0; i < attributes.length; i++) {
+          rootElementAttributes = rootElementAttributes + ' ' + attributes[i][0] + '="' + attributes[i][1] + '"';
+        }
+      } else if (attributes.length > 0){
+        rootElementAttributes = attributes[0] + '="' + attributes[1] + '"';
+      }
+
+      data = data.replace('<body>', '<body><' + (clientOptions.rootElementType || 'div') + ' id="' + (clientOptions.rootElement || 'react-app') + '" ' + rootElementAttributes + ' >' + html + '</' + (clientOptions.rootElementType || 'div') + '>');
 
       if (typeof serverOptions.webpackStats !== 'undefined') {
         data = addAssetsChunks(serverOptions, data);

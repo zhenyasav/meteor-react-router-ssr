@@ -17,7 +17,9 @@ Your main `<Route />` node of your application.<br />
 **Notice that their is no `<Router />` element, ReactRouterSSR takes care of creating it on the client and server with the correct parameters**
 
 #### clientOptions (optional)
-- `rootElement` [string]: The root element ID your React application is mounted (default to `react-app`)
+- `rootElement` [string]: The root element ID your React application is mounted with (defaults to `react-app`)
+- `rootElementType` [string]: Set the root element type (defaults to `div`)
+- `rootElementAttributes`[array]: Set the root element attributes as an array of tag-value pairs. I.e. `[['class', sidebar main], ['style', 'background-color: white']]`
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the client.
 - `history`: History object to use. You can use `new ReactRouter.history.createHistory()`, `new ReactRouter.history.createHashHistory()` or `new ReactRouter.history.createMemoryHistory()`
 - `wrapper` [React component]: Wrapping your whole application client-side
