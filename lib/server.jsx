@@ -296,6 +296,22 @@ function SSRSubscribe(context) {
       Mongo.Collection._isSSR = true;
     }
 
+    // Fire the onReady callback immediately.
+    if (params.length) {
+      var callbacks = {};
+      var lastParam = params[params.length - 1];
+      if (_.isFunction(lastParam)) {
+        callbacks.onReady = params.pop();
+      } else if (lastParam &&
+          // XXX COMPAT WITH 1.0.3.1 onError used to exist, but now we use
+          // onStop with an error callback instead.
+        _.any([lastParam.onReady, lastParam.onError, lastParam.onStop],
+          _.isFunction)) {
+        callbacks = params.pop();
+      }
+      callbacks.onReady && callbacks.onReady();
+    }
+
     return {
       stop() {}, // Nothing to stop on server-rendering
       ready() { return true; } // server gets the data straight away
