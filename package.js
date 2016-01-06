@@ -1,6 +1,6 @@
 Package.describe({
   name: 'reactrouter:react-router-ssr',
-  version: '1.2.0',
+  version: '1.2.1',
   summary: 'Server-side rendering for react-router and react-meteor-data rehydratating Meteor subscriptions',
   git: 'https://github.com/thereactivestack/meteor-react-router-ssr.git',
   documentation: 'README.md'
@@ -22,7 +22,7 @@ Package.onUse(function(api) {
     'meteorhacks:inject-data@1.4.0',
   ]);
 
-  api.use('webapp', 'server');
+  api.use('webapp@1.2.0', 'server');
   api.use('underscore@1.0.3', 'server');
   api.use('mongo@1.0.0', 'server');
   api.use('autopublish@1.0.0', 'server', {weak: true});
