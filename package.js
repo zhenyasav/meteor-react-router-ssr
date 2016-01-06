@@ -22,6 +22,7 @@ Package.onUse(function(api) {
     'meteorhacks:inject-data@1.4.0',
   ]);
 
+  api.use('webapp', 'server');
   api.use('underscore@1.0.3', 'server');
   api.use('mongo@1.0.0', 'server');
   api.use('autopublish@1.0.0', 'server', {weak: true});
