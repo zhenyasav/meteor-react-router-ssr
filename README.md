@@ -112,8 +112,9 @@ ReactRouterSSR supports applications that use Redux, using the `createReduxStore
 On both server and client side, ReactRouterSSR.Run() takes care of calling the `createReduxStore` callback and passing the resulting store as a prop to the `wrapper` component.
 
 ```javascript
+import { createStore } from 'redux';
 import { Provider } from 'react-redux'
-import createStore from './myAppStore'
+import reducers from './myAppReducers';
 
 const {IndexRoute, Route} = ReactRouter;
 
@@ -126,15 +127,27 @@ AppRoutes = (
   </Route>
 );
 
+// Simplest example:
+const createReduxStore = (initialState) => createStore(reducers, initialState);
+
+// More advanced: the 'history' param is useful when using the react-router-redux
+// package (e.g. to be able to trigger route transistions using redux actions)
+import { applyMiddleware } from 'redux';
+import { syncHistory } from 'react-router-redux';
+const createReduxStore = (initialState, history) => {
+  // Create the react-router-redux middleware with the received 'history' object
+  // (on the server side, ReactRouterSSR.Run() automatically passes a memoryHistory,
+  // compatible with server execution)
+  const reduxRouterMiddleware = syncHistory(history);
+  const createStoreWithMiddleware = applyMiddleware(reduxRouterMiddleware)(createStore);
+  // Create the store.
+  return createStoreWithMiddleware(reducers, initialState);
+}
+
 Meteor.startup(() => {
   const clientOptions = {
     wrapper: Provider,
-    createReduxStore: (initialState, history) => {
-      const store = createStore(initialState);
-      // If using redux-simple-router, this is where you can bind the history with syncReduxAndRouter
-      syncReduxAndRouter(history, store);
-      return store;
-    }
+    createReduxStore
   };
   // Use the same 'wrapper' and 'createReduxStore' in serverOptions, or adjust to your needs.
   const serverOptions = clientOptions;
