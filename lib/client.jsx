@@ -5,7 +5,7 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
     clientOptions = {};
   }
 
-  const history = clientOptions.history || ReactRouter.history.useQueries(ReactRouter.history.createHistory)();
+  const history = clientOptions.history || ReactRouter.browserHistory;
 
   Meteor.startup(function() {
     const rootElementName = clientOptions.rootElement || 'react-app';

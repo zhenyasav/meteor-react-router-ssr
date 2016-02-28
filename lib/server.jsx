@@ -22,7 +22,7 @@ function IsAppUrl(req) {
   return true;
 }
 
-const { RoutingContext } = ReactRouter;
+const { RouterContext } = ReactRouter;
 const url = Npm.require('url');
 const Fiber = Npm.require('fibers');
 const cookieParser = Npm.require('cookie-parser');
@@ -131,10 +131,10 @@ function patchResWrite(clientOptions, serverOptions, originalWrite, css, html, h
           rootElementAttributes = rootElementAttributes + ' ' + attributes[i][0] + '="' + attributes[i][1] + '"';
         }
       } else if (attributes.length > 0){
-        rootElementAttributes = attributes[0] + '="' + attributes[1] + '"';
+        rootElementAttributes = ' ' + attributes[0] + '="' + attributes[1] + '"';
       }
 
-      data = data.replace('<body>', '<body><' + (clientOptions.rootElementType || 'div') + ' id="' + (clientOptions.rootElement || 'react-app') + '" ' + rootElementAttributes + ' >' + html + '</' + (clientOptions.rootElementType || 'div') + '>');
+      data = data.replace('<body>', '<body><' + (clientOptions.rootElementType || 'div') + ' id="' + (clientOptions.rootElement || 'react-app') + '"' + rootElementAttributes + '>' + html + '</' + (clientOptions.rootElementType || 'div') + '>');
 
       if (typeof serverOptions.webpackStats !== 'undefined') {
         data = addAssetsChunks(serverOptions, data);
@@ -208,8 +208,8 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
         fetchComponentData(renderProps, reduxStore);
       }
 
-      // Wrap the <RoutingContext> if needed before rendering it.
-      let app = <RoutingContext {...renderProps} />;
+      // Wrap the <RouterContext> if needed before rendering it.
+      let app = <RouterContext {...renderProps} />;
       if (serverOptions.wrapper) {
         const wrapperProps = {};
         // Pass the redux store to the wrapper, which is supposed to be some
