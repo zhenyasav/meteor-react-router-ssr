@@ -349,16 +349,31 @@ if (Package.mongo && !Package.autopublish) {
     if (!Mongo.Collection._isSSR) {
       return originalFindOne.apply(this, args);
     }
-
-    return this._getSSRCollection().findOne(...args);
+    
+    // collection transforms compatibility
+    const selector = args.length === 0 ? {} : args[0];
+    let options = args.length < 2 ? {} : args[1];
+  
+    if (typeof this._transform === 'function') {
+      options.transform = this._transform;
+    }
+    return this._getSSRCollection().findOne(selector, options);
   };
 
   Mongo.Collection.prototype.find = function(...args) {
     if (!Mongo.Collection._isSSR) {
       return originalFind.apply(this, args);
     }
+    
+    // collection transforms compatibility
+    const selector = args.length === 0 ? {} : args[0];
+    let options = args.length < 2 ? {} : args[1];
+  
+    if (typeof this._transform === 'function') {
+      options.transform = this._transform;
+    }
 
-    return this._getSSRCollection().find(...args);
+    return this._getSSRCollection().find(selector, options);
   };
 
   Mongo.Collection._fakePublish = function(data) {
