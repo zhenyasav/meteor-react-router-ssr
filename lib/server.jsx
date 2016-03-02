@@ -229,7 +229,7 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
         // inject-data accepts raw objects and calls EJSON.stringify() on them,
         // but the _.each() done in there does not play nice if the store contains
         // ImmutableJS data. To avoid that, we serialize ourselves.
-        res.pushData('redux-initial-state', JSON.stringify(reduxStore.getState()));
+        InjectData.pushData(res, 'redux-initial-state', JSON.stringify(reduxStore.getState()));
       }
 
       if (Package['nfl:react-helmet']) {
@@ -249,7 +249,7 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       Meteor.subscribe = originalSubscribe;
     });
 
-    res.pushData('fast-render-data', context.getData());
+    InjectData.pushData(res, 'fast-render-data', context.getData());
   } catch(err) {
     console.error('error while server-rendering', err.stack);
   }
@@ -349,11 +349,11 @@ if (Package.mongo && !Package.autopublish) {
     if (!Mongo.Collection._isSSR) {
       return originalFindOne.apply(this, args);
     }
-    
+
     // collection transforms compatibility
     const selector = args.length === 0 ? {} : args[0];
     let options = args.length < 2 ? {} : args[1];
-  
+
     if (typeof this._transform === 'function') {
       options.transform = this._transform;
     }
@@ -364,11 +364,11 @@ if (Package.mongo && !Package.autopublish) {
     if (!Mongo.Collection._isSSR) {
       return originalFind.apply(this, args);
     }
-    
+
     // collection transforms compatibility
     const selector = args.length === 0 ? {} : args[0];
     let options = args.length < 2 ? {} : args[1];
-  
+
     if (typeof this._transform === 'function') {
       options.transform = this._transform;
     }
