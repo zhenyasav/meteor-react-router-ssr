@@ -327,7 +327,7 @@ function moveScripts(data) {
   const $ = Cheerio.load(data, {
     decodeEntities: false
   });
-  const heads = $('head script');
+  const heads = $('head script:not([data-dont-move])');
   $('body').append(heads);
 
   // Remove empty lines caused by removing scripts
