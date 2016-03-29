@@ -249,7 +249,25 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       Meteor.subscribe = originalSubscribe;
     });
 
-    InjectData.pushData(res, 'fast-render-data', context.getData());
+    let existingPayload = InjectData.getData(res, "fast-render-data");
+    let contextData = context.getData()
+
+    if(!existingPayload) {
+      InjectData.pushData(res, "fast-render-data", contextData);
+    } else {
+      _.extend(existingPayload.subscriptions, contextData.subscriptions);
+
+      _.each(contextData.collectionData, function(data, pubName) {
+        var existingData = existingPayload.collectionData[pubName]
+        if(existingData) {
+          data = existingData.concat(data);
+        }
+
+        existingPayload.collectionData[pubName] = data;
+      });
+
+      InjectData.pushData(res, 'fast-render-data', existingPayload);
+    }
   } catch(err) {
     console.error('error while server-rendering', err.stack);
   }
