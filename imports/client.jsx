@@ -1,6 +1,6 @@
 import { Router } from 'react-router';
 
-export const ReactRouterSSR = {
+const ReactRouterSSR = {
   Run(routes, clientOptions) {
     if (!clientOptions) {
       clientOptions = {};
@@ -68,3 +68,6 @@ export const ReactRouterSSR = {
     });
   }
 };
+
+export { ReactRouterSSR };
+export default ReactRouterSSR;

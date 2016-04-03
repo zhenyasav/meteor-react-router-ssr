@@ -1,3 +1,5 @@
+import React from 'react';
+import ReactDOMServer from 'react-dom/server';
 import { RouterContext } from 'react-router';
 import { url } from 'meteor/url';
 import { Fiber } from 'meteor/fibers';
@@ -5,6 +7,10 @@ import { cookieParser } from 'cookie-parser';
 import { Cheerio } from 'cheerio';
 import { Mongo } from 'mongo';
 import { routepolicy } from 'meteor/routepolicy';
+import { _ } from 'underscore';
+import { promise } from 'promise';
+import { InjectData } from 'meteor/meteorhacks:inject-data';
+import Helmet from "react-helmet";
 
 // meteor algorithm to check if this is a meteor serving http request or not
 function IsAppUrl(req) {
@@ -32,7 +38,7 @@ function IsAppUrl(req) {
 
 let webpackStats;
 
-export const ReactRouterSSR = {
+const ReactRouterSSR = {
   LoadWebpackStats(stats) {
     webpackStats = stats;
   },
@@ -237,9 +243,7 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
         InjectData.pushData(res, 'redux-initial-state', JSON.stringify(reduxStore.getState()));
       }
 
-      if (Package['nfl:react-helmet']) {
-        head = ReactHelmet.rewind();
-      }
+      head = Helmet.rewind();
 
       css = global.__STYLE_COLLECTOR__;
 
@@ -288,11 +292,6 @@ function fetchComponentData(renderProps, reduxStore) {
     .filter(component => component.fetchData);
 
   if (!componentsWithFetch.length) {
-    return;
-  }
-
-  if (!Package.promise) {
-    console.error("react-router-ssr: Support for fetchData() static methods on route components requires the 'promise' package.");
     return;
   }
 
@@ -428,3 +427,8 @@ if (Package.mongo && !Package.autopublish) {
     });
   }
 }
+
+console.log('yo');
+
+export { ReactRouterSSR };
+export default ReactRouterSSR;
