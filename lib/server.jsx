@@ -223,7 +223,6 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
 
       // Do the rendering.
       if (!serverOptions.disableSSR){
-        console.log("Performing the Server render.")
         html = ReactDOMServer.renderToString(app);
       }
 
