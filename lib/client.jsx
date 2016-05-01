@@ -1,11 +1,13 @@
-const {Router} = ReactRouter;
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Router, browserHistory } from 'react-router';
 
-ReactRouterSSR.Run = function(routes, clientOptions) {
+function Run(routes, clientOptions) {
   if (!clientOptions) {
     clientOptions = {};
   }
 
-  const history = clientOptions.history || ReactRouter.browserHistory;
+  const history = clientOptions.history || browserHistory;
 
   Meteor.startup(function() {
     const rootElementName = clientOptions.rootElement || 'react-app';
@@ -66,3 +68,7 @@ ReactRouterSSR.Run = function(routes, clientOptions) {
     }
   });
 }
+
+export default {
+  Run
+};
