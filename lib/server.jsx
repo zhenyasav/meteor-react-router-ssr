@@ -1,5 +1,3 @@
-import { RouterContext, history, match } from 'react-router';
-
 // meteor algorithm to check if this is a meteor serving http request or not
 function IsAppUrl(req) {
   var url = req.url
@@ -24,17 +22,18 @@ function IsAppUrl(req) {
   return true;
 }
 
+const { RouterContext } = ReactRouter;
 const url = Npm.require('url');
 const Fiber = Npm.require('fibers');
 const cookieParser = Npm.require('cookie-parser');
 
 let webpackStats;
 
-function LoadWebpackStats(stats) {
+ReactRouterSSR.LoadWebpackStats = function(stats) {
   webpackStats = stats;
 }
 
-function Run(routes, clientOptions, serverOptions) {
+ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
   if (!clientOptions) {
     clientOptions = {};
   }
@@ -71,7 +70,7 @@ function Run(routes, clientOptions, serverOptions) {
       Meteor.user = () => undefined;
 
       // On the server, no route should be async (I guess we trust the app)
-      match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
+      ReactRouter.match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
         if (err) {
           res.writeHead(500);
           res.write(err.messages);
@@ -201,7 +200,7 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       if (typeof serverOptions.createReduxStore !== 'undefined') {
         // Create a history and set the current path, in case the callback wants
         // to bind it to the store using redux-simple-router's syncReduxAndRouter().
-        const history = history.useQueries(history.createMemoryHistory)();
+        const history = ReactRouter.history.useQueries(ReactRouter.history.createMemoryHistory)();
         history.replace(req.url);
         // Create the store, with no initial state.
         reduxStore = serverOptions.createReduxStore(undefined, history);
@@ -428,8 +427,3 @@ if (Package.mongo && !Package.autopublish) {
     });
   }
 }
-
-export default {
-  LoadWebpackStats,
-  Run
-};
