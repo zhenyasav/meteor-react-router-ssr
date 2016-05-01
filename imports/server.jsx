@@ -1,3 +1,17 @@
+import React from 'react';
+import ReactDOMServer from 'react-dom/server';
+import { RouterContext } from 'react-router';
+import { url } from 'meteor/url';
+import { Fiber } from 'meteor/fibers';
+import { cookieParser } from 'cookie-parser';
+import { Cheerio } from 'cheerio';
+import { Mongo } from 'mongo';
+import { routepolicy } from 'meteor/routepolicy';
+import { _ } from 'underscore';
+import { promise } from 'promise';
+import { InjectData } from 'meteor/meteorhacks:inject-data';
+import Helmet from "react-helmet";
+
 // meteor algorithm to check if this is a meteor serving http request or not
 function IsAppUrl(req) {
   var url = req.url
@@ -22,76 +36,73 @@ function IsAppUrl(req) {
   return true;
 }
 
-const { RouterContext } = ReactRouter;
-const url = Npm.require('url');
-const Fiber = Npm.require('fibers');
-const cookieParser = Npm.require('cookie-parser');
-
 let webpackStats;
 
-ReactRouterSSR.LoadWebpackStats = function(stats) {
-  webpackStats = stats;
-}
+const ReactRouterSSR = {
+  LoadWebpackStats(stats) {
+    webpackStats = stats;
+  },
 
-ReactRouterSSR.Run = function(routes, clientOptions, serverOptions) {
-  if (!clientOptions) {
-    clientOptions = {};
-  }
+  Run(routes, clientOptions, serverOptions) {
+    if (!clientOptions) {
+      clientOptions = {};
+    }
 
-  if (!serverOptions) {
-    serverOptions = {};
-  }
+    if (!serverOptions) {
+      serverOptions = {};
+    }
 
-  if (!serverOptions.webpackStats) {
-    serverOptions.webpackStats = webpackStats;
-  }
+    if (!serverOptions.webpackStats) {
+      serverOptions.webpackStats = webpackStats;
+    }
 
-  Meteor.bindEnvironment(function() {
-    // Parse cookies for the login token
-    WebApp.rawConnectHandlers.use(cookieParser());
+    Meteor.bindEnvironment(function() {
+      // Parse cookies for the login token
+      WebApp.rawConnectHandlers.use(cookieParser());
 
-    WebApp.connectHandlers.use(Meteor.bindEnvironment(function(req, res, next) {
-      if (!IsAppUrl(req)) {
-        next();
-        return;
-      }
-
-      global.__CHUNK_COLLECTOR__ = [];
-
-      var loginToken = req.cookies['meteor_login_token'];
-      var headers = req.headers;
-      var context = new FastRender._Context(loginToken, { headers });
-
-      const originalUserId = Meteor.userId;
-      const originalUser = Meteor.user;
-
-      // This should be the state of the client when he remount the app
-      Meteor.userId = () => context.userId;
-      Meteor.user = () => undefined;
-
-      // On the server, no route should be async (I guess we trust the app)
-      ReactRouter.match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
-        if (err) {
-          res.writeHead(500);
-          res.write(err.messages);
-          res.end();
-        } else if (redirectLocation) {
-          res.writeHead(302, { Location: redirectLocation.pathname + redirectLocation.search })
-          res.end();
-        } else if (renderProps) {
-          sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps);
-        } else {
-          res.writeHead(404);
-          res.write('Not found');
-          res.end();
+      WebApp.connectHandlers.use(Meteor.bindEnvironment(function(req, res, next) {
+        if (!IsAppUrl(req)) {
+          next();
+          return;
         }
-      }));
 
-      Meteor.userId = originalUserId;
-      Meteor.user = originalUser;
-    }));
-  })();
-};
+        global.__CHUNK_COLLECTOR__ = [];
+
+        var loginToken = req.cookies['meteor_login_token'];
+        var headers = req.headers;
+        var context = new FastRender._Context(loginToken, { headers });
+
+        const originalUserId = Meteor.userId;
+        const originalUser = Meteor.user;
+
+        // This should be the state of the client when he remount the app
+        Meteor.userId = () => context.userId;
+        Meteor.user = () => undefined;
+
+        // On the server, no route should be async (I guess we trust the app)
+        ReactRouter.match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
+          if (err) {
+            res.writeHead(500);
+            res.write(err.messages);
+            res.end();
+          } else if (redirectLocation) {
+            res.writeHead(302, { Location: redirectLocation.pathname + redirectLocation.search })
+            res.end();
+          } else if (renderProps) {
+            sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps);
+          } else {
+            res.writeHead(404);
+            res.write('Not found');
+            res.end();
+          }
+        }));
+
+        Meteor.userId = originalUserId;
+        Meteor.user = originalUser;
+      }));
+    })();
+  }
+}
 
 function sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps) {
   const { css, html, head } = generateSSRData(serverOptions, context, req, res, renderProps);
@@ -232,9 +243,7 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
         InjectData.pushData(res, 'redux-initial-state', JSON.stringify(reduxStore.getState()));
       }
 
-      if (Package['nfl:react-helmet']) {
-        head = ReactHelmet.rewind();
-      }
+      head = Helmet.rewind();
 
       css = global.__STYLE_COLLECTOR__;
 
@@ -286,11 +295,6 @@ function fetchComponentData(renderProps, reduxStore) {
     return;
   }
 
-  if (!Package.promise) {
-    console.error("react-router-ssr: Support for fetchData() static methods on route components requires the 'promise' package.");
-    return;
-  }
-
   // Call the fetchData() methods, which lets the component dispatch possibly
   // asynchronous actions, and collect the promises.
   const promises = componentsWithFetch
@@ -336,10 +340,6 @@ function SSRSubscribe(context) {
     };
   }
 }
-
-// Thank you FlowRouter for this wonderful idea :)
-// https://github.com/kadirahq/flow-router/blob/ssr/server/route.js
-const Cheerio = Npm.require('cheerio');
 
 function moveScripts(data) {
   const $ = Cheerio.load(data, {
@@ -427,3 +427,8 @@ if (Package.mongo && !Package.autopublish) {
     });
   }
 }
+
+console.log('yo');
+
+export { ReactRouterSSR };
+export default ReactRouterSSR;
