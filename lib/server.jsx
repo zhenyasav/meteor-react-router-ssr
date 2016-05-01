@@ -199,9 +199,10 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       global.__STYLE_COLLECTOR_MODULES__ = [];
       global.__STYLE_COLLECTOR__ = '';
 
+      let serverProps = serverOptions.props;
       renderProps = {
         ...renderProps,
-        ...serverOptions.props
+        ...serverProps
       };
 
       // If using redux, create the store.
@@ -230,7 +231,9 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       }
 
       // Do the rendering.
-      html = ReactDOMServer.renderToString(app);
+      if (!serverOptions.disableSSR){
+        html = ReactDOMServer.renderToString(app);
+      }
 
       // If using redux, pass the resulting redux state to the client so that it
       // can hydrate from there.

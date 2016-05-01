@@ -32,6 +32,7 @@ Your main `<Route />` node of your application.<br />
 - `dontMoveScripts` [bool]: Keep the script inside the head tag instead of moving it at the end of the body
 - `wrapper` [React component]: Wrapping your whole application server-side
 - `createReduxStore` [callback]: (if using Redux) A callback returning the application's redux store. See example below.
+- `disableSSR` [bool]: Disable server-side rendering, in case the application depends on code which doesn't work on the server.
 
 ### Scripts
 Unless you disabled it, the scripts yo have in the header will be moved down at the end of the body tag.
