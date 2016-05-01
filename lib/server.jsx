@@ -1,16 +1,14 @@
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import { RouterContext } from 'react-router';
+import { RouterContext, match, history } from 'react-router';
 import { url } from 'meteor/url';
-import { Fiber } from 'meteor/fibers';
-import { cookieParser } from 'cookie-parser';
-import { Cheerio } from 'cheerio';
-import { Mongo } from 'mongo';
+import { Mongo } from 'meteor/mongo';
 import { routepolicy } from 'meteor/routepolicy';
-import { _ } from 'underscore';
-import { promise } from 'promise';
 import { InjectData } from 'meteor/meteorhacks:inject-data';
 import Helmet from "react-helmet";
+
+const Cheerio = Npm.require('cheerio');
+const cookieParser = Npm.require('cookie-parser');
 
 // meteor algorithm to check if this is a meteor serving http request or not
 function IsAppUrl(req) {
@@ -80,7 +78,7 @@ const ReactRouterSSR = {
         Meteor.user = () => undefined;
 
         // On the server, no route should be async (I guess we trust the app)
-        ReactRouter.match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
+        match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
           if (err) {
             res.writeHead(500);
             res.write(err.messages);
@@ -211,7 +209,7 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       if (typeof serverOptions.createReduxStore !== 'undefined') {
         // Create a history and set the current path, in case the callback wants
         // to bind it to the store using redux-simple-router's syncReduxAndRouter().
-        const history = ReactRouter.history.useQueries(ReactRouter.history.createMemoryHistory)();
+        const history = history.useQueries(history.createMemoryHistory)();
         history.replace(req.url);
         // Create the store, with no initial state.
         reduxStore = serverOptions.createReduxStore(undefined, history);
@@ -427,8 +425,6 @@ if (Package.mongo && !Package.autopublish) {
     });
   }
 }
-
-console.log('yo');
 
 export { ReactRouterSSR };
 export default ReactRouterSSR;

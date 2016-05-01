@@ -6,22 +6,34 @@ Package.describe({
   documentation: 'README.md'
 });
 
+Npm.depends({
+  'cookie-parser': '1.4.1',
+  'cheerio': '0.20.0'
+});
+
 Package.onUse(function(api) {
   api.versionsFrom('1.3');
   api.use([
     'ecmascript',
     'minimongo@1.0.0',
     'meteorhacks:fast-render@2.12.0',
-    'meteorhacks:inject-data@2.0.0'
+    'meteorhacks:inject-data@2.0.0',
+    'tmeasday:check-npm-versions@0.2.0'
   ]);
 
-  api.use('webapp@1.2.0', 'server');
-  api.use('mongo@1.0.0', 'server');
-  api.use('autopublish@1.0.0', 'server', {weak: true});
+  api.use([
+    'underscore@1.0.3',
+    'webapp@1.2.0',
+    'mongo@1.0.0',
+    'routepolicy@1.0.5'
+  ], 'server');
 
-  api.use('tmeasday:publish-counts@0.7.0', 'server', {weak: true});
-  api.use(['routepolicy@1.0.5'], ['server']);
+  api.use([
+    'autopublish@1.0.0',
+    'tmeasday:publish-counts@0.7.0',
+    'promise@0.5.1'
+  ], 'server', {weak: true})
 
-  api.mainModule('imports/client.jsx', 'client');
-  api.mainModule('imports/server.jsx', 'server');
+  api.export('ReactRouterSSR');
+  api.mainModule('lib/react-router-ssr.js');
 });

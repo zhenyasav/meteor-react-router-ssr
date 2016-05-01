@@ -44,7 +44,10 @@ To keep a particuliar code in the head, you can add the `data-dont-move` attribu
 
 ## Simple Example
 ```javascript
-const {IndexRoute, Route} = ReactRouter;
+import React, { Component } from 'react';
+import ReactMixin from 'react-mixin';
+import { IndexRoute, Route } from ReactRouter;
+import ReactRouterSSR from 'meteor/reactrouter:react-router-ssr';
 
 AppRoutes = (
   <Route path="/" component={App}>
@@ -55,9 +58,8 @@ AppRoutes = (
   </Route>
 );
 
-HomePage = React.createClass({
-  mixins: [ReactMeteorData],
-
+@ReactMixin(ReactMeteorData)
+export default class HomePage extends Component
   getMeteorData() {
     Meteor.subscribe('profile');
 
