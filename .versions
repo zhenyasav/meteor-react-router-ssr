@@ -44,7 +44,7 @@ promise@0.6.7
 random@1.0.9
 rate-limit@1.0.4
 reactive-var@1.0.9
-reactrouter:react-router-ssr@3.0.1
+reactrouter:react-router-ssr@3.1.0
 retry@1.0.7
 routepolicy@1.0.10
 service-configuration@1.0.9
@@ -54,5 +54,6 @@ tmeasday:check-npm-versions@0.2.0
 tracker@1.0.13
 ui@1.0.11
 underscore@1.0.8
+url@1.0.9
 webapp@1.2.8
 webapp-hashing@1.0.9
