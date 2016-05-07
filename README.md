@@ -4,6 +4,8 @@ It has a protection against leaking your data. Only subscribed data will be avai
 
 What about your SEO? Just add [`nfl:react-helmet`](https://atmospherejs.com/nfl/react-helmet) package and it will take care of adding your page title / meta tags on server-rendering.
 
+What about your SEO? Just `npm install react-helmet` and hook it with `prepareHtml(html): string` (see the example below).
+
 ## Install
 `meteor add reactrouter:react-router-ssr`
 
@@ -27,6 +29,7 @@ Your main `<Route />` node of your application.<br />
 
 #### serverOptions (optional)
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the server.
+- `prepareHtml` [function(html): string]: Prepare the HTML before sending it to the client
 - `preRender` [function(req, res)]: Executed just before the renderToString
 - `postRender` [function(req, res)]: Executed just after the renderToString
 - `dontMoveScripts` [bool]: Keep the script inside the head tag instead of moving it at the end of the body
@@ -79,7 +82,9 @@ ReactRouterSSR.Run(AppRoutes);
 
 ## Complex Example
 ```javascript
-const {IndexRoute, Route} = ReactRouter;
+import { IndexRoute, Route } from 'react-router';
+import ReactHelmet from 'react-helmet';
+import ReactCookie from 'react-cookie';
 
 AppRoutes = (
   <Route path="/" component={App}>
@@ -95,6 +100,10 @@ ReactRouterSSR.Run(AppRoutes, {
     onUpdate() {
       // Notify the page has been changed to Google Analytics
       ga('send', 'pageview');
+    },
+    prepareHtml(html) {
+      const head = ReactHelmet.rewind();
+      return data.replace('<head>', '<head>' + head.title + head.base + head.meta + head.link + head.script);
     }
   }
 }, {

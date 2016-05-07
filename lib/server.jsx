@@ -5,7 +5,6 @@ import { url } from 'meteor/url';
 import { Mongo } from 'meteor/mongo';
 import { routepolicy } from 'meteor/routepolicy';
 import { InjectData } from 'meteor/meteorhacks:inject-data';
-import Helmet from "react-helmet";
 
 const Cheerio = Npm.require('cheerio');
 const cookieParser = Npm.require('cookie-parser');
@@ -103,13 +102,13 @@ const ReactRouterSSR = {
 }
 
 function sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps) {
-  const { css, html, head } = generateSSRData(serverOptions, context, req, res, renderProps);
-  res.write = patchResWrite(clientOptions, serverOptions, res.write, css, html, head);
+  const { css, html } = generateSSRData(serverOptions, context, req, res, renderProps);
+  res.write = patchResWrite(clientOptions, serverOptions, res.write, css, html);
 
   next();
 }
 
-function patchResWrite(clientOptions, serverOptions, originalWrite, css, html, head) {
+function patchResWrite(clientOptions, serverOptions, originalWrite, css, html) {
   return function(data) {
     if(typeof data === 'string' && data.indexOf('<!DOCTYPE html>') === 0) {
       if (!serverOptions.dontMoveScripts) {
@@ -120,11 +119,8 @@ function patchResWrite(clientOptions, serverOptions, originalWrite, css, html, h
         data = data.replace('</head>', '<style id="' + (clientOptions.styleCollectorId || 'css-style-collector-data') + '">' + css + '</style></head>');
       }
 
-      if (head) {
-        // Add react-helmet stuff in the header (yay SEO!)
-        data = data.replace('<head>',
-          '<head>' + head.title + head.base + head.meta + head.link + head.script
-        );
+      if (typeof serverOptions.as === 'function') {
+        data = serverOptions.prepareHtml(data)
       }
 
       /*
@@ -180,7 +176,7 @@ function addAssetsChunks(serverOptions, data) {
 }
 
 function generateSSRData(serverOptions, context, req, res, renderProps) {
-  let html, css, head;
+  let html, css;
 
   try {
     FastRender.frContext.withValue(context, function() {
@@ -244,8 +240,6 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
         InjectData.pushData(res, 'redux-initial-state', JSON.stringify(reduxStore.getState()));
       }
 
-      head = Helmet.rewind();
-
       css = global.__STYLE_COLLECTOR__;
 
       if (serverOptions.postRender) {
@@ -282,7 +276,7 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
     console.error('error while server-rendering', err.stack);
   }
 
-  return { html, css, head };
+  return { html, css };
 }
 
 function fetchComponentData(renderProps, reduxStore) {

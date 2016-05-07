@@ -25,7 +25,8 @@ Package.onUse(function(api) {
     'underscore@1.0.3',
     'webapp@1.2.0',
     'mongo@1.0.0',
-    'routepolicy@1.0.5'
+    'routepolicy@1.0.5',
+    'url@1.0.9'
   ], 'server');
 
   api.use([
