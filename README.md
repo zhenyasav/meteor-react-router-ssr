@@ -27,7 +27,8 @@ Your main `<Route />` node of your application.<br />
 
 #### serverOptions (optional)
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the server.
-- `htmlHook` [function(html) : string]: Prepare the HTML before sending it to the client
+- `htmlHook` [function(html) : newHtml]: Prepare the HTML before sending it to the client
+- `historyHook` [function(history): newHistory]: Hook something on the history
 - `fetchDataHook` [function(components) : Array<Promise>]: Trigger the fetchData on your components that have it
 - `preRender` [function(req, res)]: Executed just before the renderToString
 - `postRender` [function(req, res)]: Executed just after the renderToString

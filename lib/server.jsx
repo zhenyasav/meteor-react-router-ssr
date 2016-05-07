@@ -121,8 +121,8 @@ function patchResWrite(clientOptions, serverOptions, originalWrite, css, html) {
         data = data.replace('</head>', '<style id="' + (clientOptions.styleCollectorId || 'css-style-collector-data') + '">' + css + '</style></head>');
       }
 
-      if (typeof serverOptions.hookHtml === 'function') {
-        data = serverOptions.hookHtml(data);
+      if (typeof serverOptions.htmlHook === 'function') {
+        data = serverOptions.htmlHook(data);
       }
 
       let rootElementAttributes = '';
@@ -203,7 +203,7 @@ function generateSSRData(clientOptions, serverOptions, req, res, renderProps) {
         ...serverOptions.props
       };
 
-      fetchComponentData(renderProps);
+      fetchComponentData(serverOptions, renderProps);
       let app = <RouterContext {...renderProps} />;
 
       if (typeof clientOptions.wrapperHook === 'function') {
@@ -229,7 +229,7 @@ function generateSSRData(clientOptions, serverOptions, req, res, renderProps) {
   return { html, css };
 }
 
-function fetchComponentData(renderProps) {
+function fetchComponentData(serverOptions, renderProps) {
   const componentsWithFetch = renderProps.components
     .filter(component => !!component)
     .filter(component => component.fetchData);
@@ -243,7 +243,7 @@ function fetchComponentData(renderProps) {
     return;
   }
 
-  const promises = fetchDataHook(componentsWithFetch);
+  const promises = serverOptions.fetchDataHook(componentsWithFetch);
   Promise.awaitAll(promises);
 }
 
