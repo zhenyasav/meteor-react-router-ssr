@@ -71,10 +71,12 @@ const ReactRouterSSR = {
 
         const originalUserId = Meteor.userId;
         const originalUser = Meteor.user;
+        const originalLoggingIn = Meteor.loggingIn;
 
         // This should be the state of the client when he remount the app
         Meteor.userId = () => context.userId;
-        Meteor.user = () => undefined;
+        Meteor.user = () => Meteor.users.findOne(context.userId);
+        Meteor.loggingIn = () => false;
 
         // On the server, no route should be async (I guess we trust the app)
         match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
@@ -96,6 +98,7 @@ const ReactRouterSSR = {
 
         Meteor.userId = originalUserId;
         Meteor.user = originalUser;
+        Meteor.loggingIn = originalLoggingIn;
       }));
     })();
   }
