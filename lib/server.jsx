@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import { RouterContext, match, history } from 'react-router';
+import { RouterContext, match, createMemoryHistory } from 'react-router';
 import { url } from 'meteor/url';
 import { Mongo } from 'meteor/mongo';
 import { routepolicy } from 'meteor/routepolicy';
@@ -206,7 +206,7 @@ function generateSSRData(serverOptions, context, req, res, renderProps) {
       if (typeof serverOptions.createReduxStore !== 'undefined') {
         // Create a history and set the current path, in case the callback wants
         // to bind it to the store using redux-simple-router's syncReduxAndRouter().
-        const history = history.useQueries(history.createMemoryHistory)();
+        const history = createMemoryHistory();
         history.replace(req.url);
         // Create the store, with no initial state.
         reduxStore = serverOptions.createReduxStore(undefined, history);
