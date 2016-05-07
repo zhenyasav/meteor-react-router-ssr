@@ -78,34 +78,74 @@ const ReactRouterSSR = {
         Meteor.user = () => Meteor.users.findOne(context.userId);
         Meteor.loggingIn = () => false;
 
-        // On the server, no route should be async (I guess we trust the app)
-        match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
-          if (err) {
-            res.writeHead(500);
-            res.write(err.messages);
-            res.end();
-          } else if (redirectLocation) {
-            res.writeHead(302, { Location: redirectLocation.pathname + redirectLocation.search })
-            res.end();
-          } else if (renderProps) {
-            sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps);
-          } else {
-            res.writeHead(404);
-            res.write('Not found');
-            res.end();
-          }
-        }));
+        try {
+          FastRender.frContext.withValue(context, function() {
+            const originalSubscribe = Meteor.subscribe;
+            Meteor.subscribe = SSRSubscribe(context);
 
-        Meteor.userId = originalUserId;
-        Meteor.user = originalUser;
-        Meteor.loggingIn = originalLoggingIn;
+            if (Package.mongo && !Package.autopublish) {
+              Mongo.Collection._isSSR = true;
+              Mongo.Collection._ssrData = {};
+            }
+
+            // On the server, no route should be async (I guess we trust the app)
+            match({ routes, location: req.url }, Meteor.bindEnvironment((err, redirectLocation, renderProps) => {
+              if (err) {
+                res.writeHead(500);
+                res.write(err.messages);
+                res.end();
+              } else if (redirectLocation) {
+                res.writeHead(302, { Location: redirectLocation.pathname + redirectLocation.search })
+                res.end();
+              } else if (renderProps) {
+                sendSSRHtml(clientOptions, serverOptions, req, res, next, renderProps);
+              } else {
+                res.writeHead(404);
+                res.write('Not found');
+                res.end();
+              }
+            }));
+
+            Meteor.userId = originalUserId;
+            Meteor.user = originalUser;
+            Meteor.loggingIn = originalLoggingIn;
+
+            if (Package.mongo && !Package.autopublish) {
+              Mongo.Collection._isSSR = false;
+            }
+
+            Meteor.subscribe = originalSubscribe;
+          });
+
+          let existingPayload = InjectData.getData(res, "fast-render-data");
+          let contextData = context.getData()
+
+          if(!existingPayload) {
+            InjectData.pushData(res, "fast-render-data", contextData);
+          } else {
+            _.extend(existingPayload.subscriptions, contextData.subscriptions);
+
+            _.each(contextData.collectionData, function(data, pubName) {
+              var existingData = existingPayload.collectionData[pubName]
+              if(existingData) {
+                data = existingData.concat(data);
+              }
+
+              existingPayload.collectionData[pubName] = data;
+            });
+
+            InjectData.pushData(res, 'fast-render-data', existingPayload);
+          }
+        } catch(err) {
+          console.error('error while server-rendering', err.stack);
+        }
       }));
     })();
   }
 }
 
-function sendSSRHtml(clientOptions, serverOptions, context, req, res, next, renderProps) {
-  const { css, html } = generateSSRData(serverOptions, context, req, res, renderProps);
+function sendSSRHtml(clientOptions, serverOptions, req, res, next, renderProps) {
+  const { css, html } = generateSSRData(serverOptions, req, res, renderProps);
   res.write = patchResWrite(clientOptions, serverOptions, res.write, css, html);
 
   next();
@@ -178,105 +218,65 @@ function addAssetsChunks(serverOptions, data) {
   return data;
 }
 
-function generateSSRData(serverOptions, context, req, res, renderProps) {
+function generateSSRData(serverOptions, req, res, renderProps) {
   let html, css;
 
-  try {
-    FastRender.frContext.withValue(context, function() {
-      const originalSubscribe = Meteor.subscribe;
-      Meteor.subscribe = SSRSubscribe(context);
+  if (serverOptions.preRender) {
+    serverOptions.preRender(req, res);
+  }
 
-      if (Package.mongo && !Package.autopublish) {
-        Mongo.Collection._isSSR = true;
-        Mongo.Collection._ssrData = {};
-      }
+  global.__STYLE_COLLECTOR_MODULES__ = [];
+  global.__STYLE_COLLECTOR__ = '';
 
-      if (serverOptions.preRender) {
-        serverOptions.preRender(req, res);
-      }
+  let serverProps = serverOptions.props;
+  renderProps = {
+    ...renderProps,
+    ...serverProps
+  };
 
-      global.__STYLE_COLLECTOR_MODULES__ = [];
-      global.__STYLE_COLLECTOR__ = '';
+  // If using redux, create the store.
+  let reduxStore;
+  if (typeof serverOptions.createReduxStore !== 'undefined') {
+    // Create a history and set the current path, in case the callback wants
+    // to bind it to the store using redux-simple-router's syncReduxAndRouter().
+    const history = createMemoryHistory();
+    history.replace(req.url);
+    // Create the store, with no initial state.
+    reduxStore = serverOptions.createReduxStore(undefined, history);
+    // Fetch components data.
+    fetchComponentData(renderProps, reduxStore);
+  }
 
-      let serverProps = serverOptions.props;
-      renderProps = {
-        ...renderProps,
-        ...serverProps
-      };
-
-      // If using redux, create the store.
-      let reduxStore;
-      if (typeof serverOptions.createReduxStore !== 'undefined') {
-        // Create a history and set the current path, in case the callback wants
-        // to bind it to the store using redux-simple-router's syncReduxAndRouter().
-        const history = createMemoryHistory();
-        history.replace(req.url);
-        // Create the store, with no initial state.
-        reduxStore = serverOptions.createReduxStore(undefined, history);
-        // Fetch components data.
-        fetchComponentData(renderProps, reduxStore);
-      }
-
-      // Wrap the <RouterContext> if needed before rendering it.
-      let app = <RouterContext {...renderProps} />;
-      if (serverOptions.wrapper) {
-        const wrapperProps = {};
-        // Pass the redux store to the wrapper, which is supposed to be some
-        // flavour of react-redux's <Provider>.
-        if (reduxStore) {
-          wrapperProps.store = reduxStore;
-        }
-        app = <serverOptions.wrapper {...wrapperProps}>{app}</serverOptions.wrapper>;
-      }
-
-      // Do the rendering.
-      if (!serverOptions.disableSSR){
-        html = ReactDOMServer.renderToString(app);
-      }
-
-      // If using redux, pass the resulting redux state to the client so that it
-      // can hydrate from there.
-      if (reduxStore) {
-        // inject-data accepts raw objects and calls EJSON.stringify() on them,
-        // but the _.each() done in there does not play nice if the store contains
-        // ImmutableJS data. To avoid that, we serialize ourselves.
-        InjectData.pushData(res, 'redux-initial-state', JSON.stringify(reduxStore.getState()));
-      }
-
-      css = global.__STYLE_COLLECTOR__;
-
-      if (serverOptions.postRender) {
-        serverOptions.postRender(req, res);
-      }
-
-      if (Package.mongo && !Package.autopublish) {
-        Mongo.Collection._isSSR = false;
-      }
-
-      Meteor.subscribe = originalSubscribe;
-    });
-
-    let existingPayload = InjectData.getData(res, "fast-render-data");
-    let contextData = context.getData()
-
-    if(!existingPayload) {
-      InjectData.pushData(res, "fast-render-data", contextData);
-    } else {
-      _.extend(existingPayload.subscriptions, contextData.subscriptions);
-
-      _.each(contextData.collectionData, function(data, pubName) {
-        var existingData = existingPayload.collectionData[pubName]
-        if(existingData) {
-          data = existingData.concat(data);
-        }
-
-        existingPayload.collectionData[pubName] = data;
-      });
-
-      InjectData.pushData(res, 'fast-render-data', existingPayload);
+  // Wrap the <RouterContext> if needed before rendering it.
+  let app = <RouterContext {...renderProps} />;
+  if (serverOptions.wrapper) {
+    const wrapperProps = {};
+    // Pass the redux store to the wrapper, which is supposed to be some
+    // flavour of react-redux's <Provider>.
+    if (reduxStore) {
+      wrapperProps.store = reduxStore;
     }
-  } catch(err) {
-    console.error('error while server-rendering', err.stack);
+    app = <serverOptions.wrapper {...wrapperProps}>{app}</serverOptions.wrapper>;
+  }
+
+  // Do the rendering.
+  if (!serverOptions.disableSSR){
+    html = ReactDOMServer.renderToString(app);
+  }
+
+  // If using redux, pass the resulting redux state to the client so that it
+  // can hydrate from there.
+  if (reduxStore) {
+    // inject-data accepts raw objects and calls EJSON.stringify() on them,
+    // but the _.each() done in there does not play nice if the store contains
+    // ImmutableJS data. To avoid that, we serialize ourselves.
+    InjectData.pushData(res, 'redux-initial-state', JSON.stringify(reduxStore.getState()));
+  }
+
+  css = global.__STYLE_COLLECTOR__;
+
+  if (serverOptions.postRender) {
+    serverOptions.postRender(req, res);
   }
 
   return { html, css };
