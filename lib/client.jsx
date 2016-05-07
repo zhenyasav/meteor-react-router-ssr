@@ -50,14 +50,8 @@ const ReactRouterSSR = {
           {...clientOptions.props} />
       );
 
-      if (clientOptions.wrapper) {
-        const wrapperProps = {};
-        // Pass the redux store to the wrapper, which is supposed to be some
-        // flavour of react-redux's <Provider>.
-        if (reduxStore) {
-          wrapperProps.store = reduxStore;
-        }
-        app = <clientOptions.wrapper {...wrapperProps}>{app}</clientOptions.wrapper>;
+      if (typeof clientOptions.wrapperHook === 'function') {
+        app = clientOptions.wrapperHook(app);
       }
 
       ReactDOM.render(app, rootElement);
