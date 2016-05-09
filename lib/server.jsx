@@ -213,6 +213,10 @@ function generateSSRData(clientOptions, serverOptions, req, res, renderProps) {
       html = ReactDOMServer.renderToString(app);
       css = global.__STYLE_COLLECTOR__;
 
+      if (typeof serverOptions.dehydrateHook === 'function') {
+        InjectData.pushData(res, 'dehydrated-initial-data', JSON.stringify(serverOptions.dehydrateHook()));
+      }
+
       if (serverOptions.postRender) {
         serverOptions.postRender(req, res);
       }

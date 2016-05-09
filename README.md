@@ -20,7 +20,7 @@ Your main `<Route />` node of your application.<br />
 - `history`: History object for react-router
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the client.
 - `wrapperHook` [function(App) : Component]: You can wrap the react-router element with your own providers.
-
+- `rehydrateHook` [function(data)]: Receive the rehydrated object that was dehydrated during server side rendering.
 - `rootElement` [string]: The root element ID your React application is mounted with (defaults to `react-app`)
 - `rootElementType` [string]: Set the root element type (defaults to `div`)
 - `rootElementAttributes`[array]: Set the root element attributes as an array of tag-value pairs. I.e. `[['class', sidebar main], ['style', 'background-color: white']]`
@@ -29,6 +29,7 @@ Your main `<Route />` node of your application.<br />
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the server.
 - `htmlHook` [function(html) : newHtml]: Prepare the HTML before sending it to the client
 - `historyHook` [function(history): newHistory]: Hook something on the history
+- `dehydrateHook` [function() : data]: Supply data that should be dehydrated and sent to client.
 - `fetchDataHook` [function(components) : Array<Promise>]: Trigger the fetchData on your components that have it
 - `preRender` [function(req, res)]: Executed just before the renderToString
 - `postRender` [function(req, res)]: Executed just after the renderToString
