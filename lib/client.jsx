@@ -8,7 +8,11 @@ const ReactRouterSSR = {
       clientOptions = {};
     }
 
-    const history = clientOptions.history || browserHistory;
+    let history = browserHistory;
+
+    if(typeof clientOptions.historyHook === 'function') {
+      history = clientOptions.historyHook(history);
+    }
 
     Meteor.startup(function() {
       const rootElementName = clientOptions.rootElement || 'react-app';

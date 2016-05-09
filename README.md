@@ -17,7 +17,7 @@ Your main `<Route />` node of your application.<br />
 **Notice that their is no `<Router />` element, ReactRouterSSR takes care of creating it on the client and server with the correct parameters**
 
 #### clientOptions (optional)
-- `history`: History object for react-router
+- `historyHook`: [function(history) : newHistory] - Hook something into history client side.
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the client.
 - `wrapperHook` [function(App) : Component]: You can wrap the react-router element with your own providers.
 - `rehydrateHook` [function(data)]: Receive the rehydrated object that was dehydrated during server side rendering.
@@ -28,7 +28,7 @@ Your main `<Route />` node of your application.<br />
 #### serverOptions (optional)
 - `props` [object]: The additional arguments you would like to give to the `<Router />` component on the server.
 - `htmlHook` [function(html) : newHtml]: Prepare the HTML before sending it to the client
-- `historyHook` [function(history): newHistory]: Hook something on the history
+- `historyHook` [function(history): newHistory]: Hook something on the history server side.
 - `dehydrateHook` [function() : data]: Supply data that should be dehydrated and sent to client.
 - `fetchDataHook` [function(components) : Array<Promise>]: Trigger the fetchData on your components that have it
 - `preRender` [function(req, res)]: Executed just before the renderToString
