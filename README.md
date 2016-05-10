@@ -124,69 +124,52 @@ if (Meteor.isClient) {
 ```
 
 ## Example with Redux
-### WARNING: This example need to be updated
 
-ReactRouterSSR supports applications that use Redux, using the `createReduxStore` and `wrapper` options in both clientOptions and serverOptions.
-- `createReduxStore` should be a callback in the shape `(initialState, history) => store`
-- `wrapper` should be the `Provider` component from react-redux (or some custom component wrapping the `Provider` and passing it the `store` prop it receives)
-
-On both server and client side, ReactRouterSSR.Run() takes care of calling the `createReduxStore` callback and passing the resulting store as a prop to the `wrapper` component.
+ReactRouterSSR supports applications that use Redux, using the `rehydrateHook` and `dehydrateHook` options in clientOptions and serverOptions respectively.
 
 ```javascript
-import { createStore } from 'redux';
-import { Provider } from 'react-redux'
-import reducers from './myAppReducers';
+import React from 'react';
+import { Provider } from 'react-redux';
 
-const {IndexRoute, Route} = ReactRouter;
+import routes from './routes';
+import configureStore from './store';
 
-AppRoutes = (
-  <Route path="/" component={App}>
-    <IndexRoute component={HomePage} />
-    <Route path="login" component={LoginPage} />
-    <Route path="*" component={NotFoundPage} />
-    {/* ... */}
-  </Route>
-);
+// Data that is populated by hooks during startup
+let history;
+let store;
+let initialState;
 
-// Simplest example:
-const createReduxStore = (initialState) => createStore(reducers, initialState);
+// Use history hook to get a reference to the history object
+const historyHook = newHistory => history = newHistory;
 
-// More advanced: the 'history' param is useful when using the react-router-redux
-// package (e.g. to be able to trigger route transistions using redux actions)
-import { applyMiddleware } from 'redux';
-import { syncHistory } from 'react-router-redux';
-const createReduxStore = (initialState, history) => {
-  // Create the react-router-redux middleware with the received 'history' object
-  // (on the server side, ReactRouterSSR.Run() automatically passes a memoryHistory,
-  // compatible with server execution)
-  const reduxRouterMiddleware = syncHistory(history);
-  const createStoreWithMiddleware = applyMiddleware(reduxRouterMiddleware)(createStore);
-  // Create the store.
-  return createStoreWithMiddleware(reducers, initialState);
+// Pass the state of the store as the object to be dehydrated server side
+const dehydrateHook = () => store.getState();
+
+// Take the rehydrated state and use it as the initial state client side
+const rehydrateHook = state => initialState = state;
+
+// Create a redux store and pass into the redux Provider wrapper
+const wrapperHook = app => {
+  store = configureStore(initialState, history);
+  return <Provider store={store}>{app}</Provider>;
 }
 
-Meteor.startup(() => {
-  const clientOptions = {
-    wrapper: Provider,
-    createReduxStore
-  };
-  // Use the same 'wrapper' and 'createReduxStore' in serverOptions, or adjust to your needs.
-  const serverOptions = clientOptions;
+const clientOptions = { historyHook, rehydrateHook, wrapperHook };
+const serverOptions = { historyHook, dehydrateHook };
 
-  ReactRouterSSR.Run(routes, clientOptions, serverOptions);
-});
+ReactRouterSSR.Run(routes, clientOptions, serverOptions);
 ```
 
-### Client-side store rehydration
-ReactRouterSSR automatically takes care of client-side store rehydration:
+### Client-side data rehydration
+ReactRouterSSR provides hooks to make use of client-side data rehydration:
 
-- On server side, once rendering is done, the resulting store state is serialized (using `JSON.stringify()`) and sent to the client as part of the generated HTML.
-- On the client side, that serialized state is automatically picked up and passed to the `createReduxStore` callback as the 'initialState'.
+- On server side, once rendering is done, the data returned from dehydrateHook is serialized (using `JSON.stringify()`) and sent to the client as part of the generated HTML.
+- On the client side, that serialized data is rehydrated and passed to the client via rehydrateHook.
 
-#### State serialization
-The `JSON.stringify()` serialization means that, if your reducers store "rich" domain objects with methods attached though prototypes or ES6 classes (for example documents fetched from Mongo collections with an associated transform, or [ImmutableJS](https://facebook.github.io/immutable-js) structures...), the client receives them downcasted to Plain Old Javascript Objects (without prototypes or methods) in the 'initialState'.
+#### Data serialization
+The `JSON.stringify()` serialization means that, if your data holds "rich" domain objects with methods attached though prototypes or ES6 classes (for example documents fetched from Mongo collections with an associated transform, or [ImmutableJS](https://facebook.github.io/immutable-js) structures...), the client receives them downcasted to Plain Old Javascript Objects (without prototypes or methods) in the 'data'.
 
-It is then the responsibility of the client code to "upcast" them back to the expected domain objects. It is recommended to handle that in each of the relevant reducers, by taking advantage of the fact that redux's `createStore()` dispatches an internal action with the 'initialState' it has been passed (which, in our case, is the unserialized state coming from the server rendering.)
+It is then the responsibility of the client code to "upcast" them back to the expected domain objects. In the case of redux it is recommended to handle that in each of the relevant reducers, by taking advantage of the fact that redux's `createStore()` dispatches an internal action with the 'initialState' it has been passed (which, in our case, is the unserialized state coming from the server rendering.)
 
 For example:
 
