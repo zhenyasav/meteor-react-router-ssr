@@ -8,7 +8,11 @@ const ReactRouterSSR = {
       clientOptions = {};
     }
 
-    const history = clientOptions.history || browserHistory;
+    let history = browserHistory;
+
+    if(typeof clientOptions.historyHook === 'function') {
+      history = clientOptions.historyHook(history);
+    }
 
     Meteor.startup(function() {
       const rootElementName = clientOptions.rootElement || 'react-app';
@@ -34,12 +38,11 @@ const ReactRouterSSR = {
         document.body.appendChild(rootElement);
       }
 
-      // If using redux, create the store with the initial state injected by the server.
-      let reduxStore;
-      if (typeof clientOptions.createReduxStore !== 'undefined') {
-        InjectData.getData('redux-initial-state', data => {
-          const initialState = data ? JSON.parse(data) : undefined;
-          reduxStore = clientOptions.createReduxStore(initialState, history);
+      // Rehydrate data client side, if desired.
+      if(typeof clientOptions.rehydrateHook === 'function') {
+        InjectData.getData('dehydrated-initial-data', data => {
+          const rehydratedData = data ? JSON.parse(data) : undefined;
+          clientOptions.rehydrateHook(rehydratedData);
         });
       }
 
