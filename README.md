@@ -50,7 +50,7 @@ To keep a particuliar code in the head, you can add the `data-dont-move` attribu
 import React, { Component } from 'react';
 import ReactMixin from 'react-mixin';
 import { IndexRoute, Route } from 'react-router';
-import ReactRouterSSR from 'meteor/reactrouter:react-router-ssr';
+import { ReactRouterSSR } from 'meteor/reactrouter:react-router-ssr';
 
 AppRoutes = (
   <Route path="/" component={App}>
