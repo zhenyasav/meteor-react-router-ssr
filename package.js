@@ -16,6 +16,7 @@ Package.onUse(function(api) {
   api.versionsFrom('1.3');
   api.use([
     'ecmascript',
+    'tracker',
     'minimongo@1.0.0',
     'meteorhacks:fast-render@2.12.0',
     'meteorhacks:inject-data@2.0.0',
