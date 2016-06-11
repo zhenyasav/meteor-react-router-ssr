@@ -210,7 +210,12 @@ function generateSSRData(clientOptions, serverOptions, req, res, renderProps) {
         app = clientOptions.wrapperHook(app);
       }
 
-      html = ReactDOMServer.renderToString(app);
+      if (!serverOptions.disableSSR){
+        html = ReactDOMServer.renderToString(app);
+      } else if (serverOptions.loadingScreen){
+        html = serverOptions.loadingScreen;
+      }
+
       css = global.__STYLE_COLLECTOR__;
 
       if (typeof serverOptions.dehydrateHook === 'function') {
