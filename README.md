@@ -14,7 +14,7 @@ Read the [react-router documentation](https://github.com/rackt/react-router/tree
 
 #### routes
 Your main `<Route />` node of your application.<br />
-**Notice that their is no `<Router />` element, ReactRouterSSR takes care of creating it on the client and server with the correct parameters**
+**Notice that there is no `<Router />` element, ReactRouterSSR takes care of creating it on the client and server with the correct parameters**
 
 #### clientOptions (optional)
 - `historyHook`: [function(history) : newHistory] - Hook something into history client side.
