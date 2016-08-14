@@ -57,7 +57,11 @@ const ReactRouterSSR = {
         app = clientOptions.wrapperHook(app);
       }
 
-      ReactDOM.render(app, rootElement);
+      if (typeof clientOptions.renderHook === 'function') {
+        clientOptions.renderHook(app, rootElement);
+      } else {
+        ReactDOM.render(app, rootElement);
+      }
 
       let collectorEl = document.getElementById(clientOptions.styleCollectorId || 'css-style-collector-data')
 
