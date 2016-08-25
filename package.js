@@ -18,7 +18,7 @@ Package.onUse(function(api) {
     'ecmascript',
     'tracker',
     'minimongo@1.0.0',
-    'meteorhacks:fast-render@2.14.0',
+    'meteorhacks:fast-render@2.16.0',
     'meteorhacks:inject-data@2.0.0',
     'tmeasday:check-npm-versions@0.2.0'
   ]);
