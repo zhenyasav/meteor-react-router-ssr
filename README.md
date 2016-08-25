@@ -2,7 +2,7 @@ Server-side rendering for react-router and react-meteor-data rehydratating Meteo
 
 It has a protection against leaking your data. Only subscribed data will be available just the way it would be on the client.
 
-What about your SEO? Just `npm install react-helmet` and hook it with `prepareHtml(html): string` (see the example below).
+What about your SEO? Just `npm install react-helmet` and hook it with `htmlHook(html): string` (see the example below).
 
 ## Install
 `meteor add reactrouter:react-router-ssr`
@@ -14,7 +14,7 @@ Read the [react-router documentation](https://github.com/rackt/react-router/tree
 
 #### routes
 Your main `<Route />` node of your application.<br />
-**Notice that their is no `<Router />` element, ReactRouterSSR takes care of creating it on the client and server with the correct parameters**
+**Notice that there is no `<Router />` element, ReactRouterSSR takes care of creating it on the client and server with the correct parameters**
 
 #### clientOptions (optional)
 - `historyHook`: [function(history) : newHistory] - Hook something into history client side.
@@ -101,12 +101,12 @@ ReactRouterSSR.Run(AppRoutes, {
       // Notify the page has been changed to Google Analytics
       ga('send', 'pageview');
     },
-    htmlHook(html) {
-      const head = ReactHelmet.rewind();
-      return data.replace('<head>', '<head>' + head.title + head.base + head.meta + head.link + head.script);
-    }
   }
 }, {
+  htmlHook(html) {
+    const head = ReactHelmet.rewind();
+    return html.replace('<head>', '<head>' + head.title + head.base + head.meta + head.link + head.script);
+  },
   preRender: function(req, res) {
     ReactCookie.plugToRequest(req, res);
   }
